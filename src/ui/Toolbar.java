@@ -2,6 +2,7 @@ package ui;
 
 import filemanager.FTPFile;
 import methods.Delete;
+import methods.Cdup;
 import methods.Rename;
 
 import javax.swing.ImageIcon;
@@ -32,7 +33,7 @@ public class Toolbar extends JToolBar {
         setFloatable(false); // Không cho phép di chuyển thanh công cụ
 
         // Khởi tạo các nút
-        backButton = createToolbarButton("back.png", "Quay lại (chưa hoạt động)");
+        backButton = createToolbarButton("back.png", "Quay lại");
         refreshButton = createToolbarButton("refresh.png", "Tải lại");
         renameButton = createToolbarButton("rename.png", "Đổi tên");
         downloadButton = createToolbarButton("download.png", "Tải xuống (chưa hoạt động)");
@@ -56,6 +57,7 @@ public class Toolbar extends JToolBar {
      */
     @SuppressWarnings("unused")
     private void addListeners() {
+        backButton.addActionListener(e -> Cdup.handleBackAction(fileList));
         refreshButton.addActionListener(e -> fileList.refreshFileList());
         deleteButton.addActionListener(e -> Delete.handleDeleteAction(fileList));
         renameButton.addActionListener(e -> Rename.handleRenameAction(fileList));
@@ -68,6 +70,7 @@ public class Toolbar extends JToolBar {
      */
     public void updateButtonStates() {
         int selectedRow = fileList.getFileTable().getSelectedRow();
+        backButton.setEnabled(true); // Nút Back luôn được bật
         uploadButton.setEnabled(true);
 
         // Vô hiệu hóa các nút nếu không có mục nào được chọn

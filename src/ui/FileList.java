@@ -1,5 +1,7 @@
 package ui;
 
+import methods.Cwd;
+import methods.Quit;
 import methods.List;
 
 import filemanager.FTPFile;
@@ -13,8 +15,8 @@ import javax.swing.table.TableColumn;
 
 import java.awt.BorderLayout;
 import java.awt.Font;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -26,7 +28,6 @@ import java.text.SimpleDateFormat;
 
 public class FileList extends JFrame {
 
-    private final Socket controlSocket;
     private final BufferedReader controlReader;
     private final PrintWriter controlWriter;
     private JTable fileTable;
@@ -41,7 +42,6 @@ public class FileList extends JFrame {
      * @param controlWriter Luồng để gửi lệnh đến server.
      */
     public FileList(Socket controlSocket, BufferedReader controlReader, PrintWriter controlWriter) {
-        this.controlSocket = controlSocket;
         this.controlReader = controlReader;
         this.controlWriter = controlWriter;
 
@@ -54,14 +54,8 @@ public class FileList extends JFrame {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                closeConnection();
-                System.exit(0); // Thoát hoàn toàn ứng dụng
-            }
-        });
-
+        // Gán một thực thể của lớp Quit làm trình xử lý sự kiện đóng cửa sổ
+        addWindowListener(new Quit(controlWriter, controlReader, controlSocket));
         initializeTable();
 
         // Thêm thanh công cụ vào phía trên (Bắc) của cửa sổ
@@ -107,6 +101,15 @@ public class FileList extends JFrame {
         fileTable.setFont(new Font("Segoe UI", Font.PLAIN, 14)); // Tăng cỡ chữ
         fileTable.setRowHeight(25); // Tăng chiều cao hàng để icon hiển thị đẹp hơn
 
+        // Thêm trình nghe sự kiện nhấp đúp chuột
+        fileTable.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent mouseEvent) {
+                if (mouseEvent.getClickCount() == 2 && fileTable.getSelectedRow() != -1) {
+                    handleDoubleClick();
+                }
+            }
+        });
+
         // Thiết lập chiều rộng cho cột icon
         // In đậm header
         JTableHeader header = fileTable.getTableHeader();
@@ -123,6 +126,35 @@ public class FileList extends JFrame {
         fileTable.getColumnModel().getColumn(3).setPreferredWidth(250); // Ngày
 
         add(new JScrollPane(fileTable), BorderLayout.CENTER);
+    }
+
+    /**
+     * Xử lý sự kiện nhấp đúp chuột vào một mục trong bảng.
+     * Nếu mục là một thư mục, nó sẽ cố gắng thay đổi thư mục làm việc hiện tại trên server.
+     */
+    private void handleDoubleClick() {
+        int selectedRow = fileTable.getSelectedRow();
+        if (selectedRow == -1) {
+            return; // Không có hàng nào được chọn
+        }
+
+        FTPFile selectedFile = currentFiles.get(selectedRow);
+
+        if (selectedFile.isDirectory()) {
+            try {
+                if (Cwd.changeDirectory(controlWriter, controlReader, selectedFile.getName())) {
+                    // Nếu thay đổi thư mục thành công, làm mới danh sách tệp
+                    refreshFileList();
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Không thể truy cập thư mục '" + selectedFile.getName() + "'.",
+                            "Lỗi Truy Cập", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(this, "Lỗi mạng khi đổi thư mục: " + e.getMessage(), "Lỗi Mạng", JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
+        }
     }
 
     /**
@@ -182,24 +214,6 @@ public class FileList extends JFrame {
             if (tempFile != null && tempFile.exists()) {
                 tempFile.delete();
             }
-        }
-    }
-
-    /**
-     * Gửi lệnh QUIT và đóng tất cả các tài nguyên kết nối.
-     */
-    private void closeConnection() {
-        try {
-            if (controlWriter != null) {
-                controlWriter.println("QUIT"); // Gửi lệnh thoát một cách lịch sự
-                controlWriter.close();
-            }
-            if (controlReader != null) controlReader.close();
-            if (controlSocket != null && !controlSocket.isClosed()) controlSocket.close();
-            System.out.println("Đã đóng kết nối FTP.");
-        } catch (IOException ex) {
-            System.err.println("Lỗi khi đóng kết nối FTP: " + ex.getMessage());
-            ex.printStackTrace();
         }
     }
 }

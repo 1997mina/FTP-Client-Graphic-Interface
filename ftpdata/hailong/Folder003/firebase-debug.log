@@ -1,0 +1,28 @@
+[debug] [2025-02-23T16:57:16.207Z] ----------------------------------------------------------------------
+[debug] [2025-02-23T16:57:16.208Z] Command:       /usr/local/bin/firebase /Users/admin/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/bin/firebase init
+[debug] [2025-02-23T16:57:16.208Z] CLI Version:   13.31.1
+[debug] [2025-02-23T16:57:16.208Z] Platform:      darwin
+[debug] [2025-02-23T16:57:16.208Z] Node Version:  v18.5.0
+[debug] [2025-02-23T16:57:16.213Z] Time:          Sun Feb 23 2025 23:57:16 GMT+0700 (Indochina Time)
+[debug] [2025-02-23T16:57:16.213Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-02-23T16:57:16.216Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2025-02-23T16:57:16.250Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-02-23T16:57:16.251Z] > authorizing via signed-in user (hailongdao1010@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/admin
+
+Before we get started, keep in mind:
+
+  * You are initializing your home directory as a Firebase project directory
+
+[debug] [2025-02-23T16:57:16.772Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2025-02-23T16:57:16.773Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}

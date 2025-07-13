@@ -2,53 +2,36 @@ package methods;
 
 import filemanager.FTPFile;
 import ui.FileList;
+import ui.ProgressDialog;
 
 import javax.swing.*;
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Retrieve {
 
     private static final int BUFFER_SIZE = 4096;
 
     /**
-     * Tải một tệp từ máy chủ FTP về máy cục bộ bằng lệnh RETR.
-     *
-     * @param controlWriter  Trình ghi cho kết nối điều khiển.
-     * @param controlReader  Trình đọc cho kết nối điều khiển.
-     * @param remoteFileName Tên tệp trên máy chủ.
-     * @param localFile      Tệp cục bộ để lưu dữ liệu vào.
-     * @throws IOException nếu có lỗi trong quá trình giao tiếp FTP hoặc ghi tệp cục bộ.
+     * Lấy kích thước của một tệp trên máy chủ FTP bằng lệnh SIZE.
+     * @return Kích thước tệp bằng byte, hoặc -1 nếu không thể lấy được.
      */
-    private static void downloadFile(PrintWriter controlWriter, BufferedReader controlReader, String remoteFileName, File localFile) throws IOException {
-        // 1. Mở kết nối dữ liệu bằng chế độ passive.
-        try (Socket dataSocket = Passive.openDataConnection(controlReader, controlWriter);
-             InputStream dataIn = dataSocket.getInputStream();
-             FileOutputStream fileOut = new FileOutputStream(localFile)) {
-
-            // 2. Gửi lệnh RETR (Retrieve) qua kết nối điều khiển.
-            controlWriter.println("RETR " + remoteFileName);
-
-            // 3. Đọc phản hồi ban đầu (ví dụ: 150).
-            String retrResponse = controlReader.readLine();
-            if (retrResponse == null || !retrResponse.startsWith("150")) {
-                throw new IOException("Không thể tải tệp: " + retrResponse);
+    private static long getFileSize(PrintWriter controlWriter, BufferedReader controlReader, String filename) throws IOException {
+        controlWriter.println("SIZE " + filename);
+        String response = controlReader.readLine();
+        // Mã 213 là phản hồi thành công cho lệnh SIZE
+        if (response != null && response.startsWith("213")) {
+            try {
+                return Long.parseLong(response.substring(4).trim());
+            } catch (NumberFormatException e) {
+                return -1; // Không thể phân tích cú pháp kích thước
             }
-
-            // 4. Đọc từ kết nối dữ liệu và ghi vào tệp cục bộ.
-            byte[] buffer = new byte[BUFFER_SIZE];
-            int bytesRead;
-            while ((bytesRead = dataIn.read(buffer)) != -1) {
-                fileOut.write(buffer, 0, bytesRead);
-            }
-            fileOut.flush();
         }
-
-        // 5. Đọc phản hồi cuối cùng trên kết nối điều khiển (ví dụ: 226 Transfer complete).
-        String finalResponse = controlReader.readLine();
-        if (finalResponse == null || !finalResponse.startsWith("226")) {
-            throw new IOException("Quá trình tải tệp có thể chưa hoàn tất: " + finalResponse);
-        }
+        // Nếu server không hỗ trợ SIZE, đọc các phản hồi lỗi có thể có để dọn dẹp bộ đệm
+        while(controlReader.ready()) controlReader.readLine();
+        return -1; // Lệnh SIZE không được hỗ trợ hoặc thất bại
     }
 
     /**
@@ -61,7 +44,7 @@ public class Retrieve {
             return;
         }
 
-        final java.util.List<FTPFile> filesToDownload = new java.util.ArrayList<>();
+        final List<FTPFile> filesToDownload = new ArrayList<>();
         for (int row : selectedRows) {
             FTPFile selectedFile = fileList.getCurrentFiles().get(row);
             if (!selectedFile.isDirectory()) {
@@ -84,7 +67,7 @@ public class Retrieve {
             final File destinationDirectory = fileChooser.getSelectedFile();
 
             // Kiểm tra các tệp có thể bị ghi đè trước khi bắt đầu
-            java.util.List<String> conflictingFiles = new java.util.ArrayList<>();
+            List<String> conflictingFiles = new ArrayList<>();
             for (FTPFile ftpFile : filesToDownload) {
                 if (new File(destinationDirectory, ftpFile.getName()).exists()) {
                     conflictingFiles.add(ftpFile.getName());
@@ -99,23 +82,73 @@ public class Retrieve {
                 }
             }
 
+            // Tạo và hiển thị dialog tiến trình
+            ProgressDialog progressDialog = new ProgressDialog(fileList, "Đang tải xuống...");
+
             // Sử dụng SwingWorker để thực hiện tải xuống trong nền, tránh làm treo giao diện
-            SwingWorker<Integer, Void> worker = new SwingWorker<>() {
-                private final java.util.List<String> failedFiles = new java.util.ArrayList<>();
+            SwingWorker<Integer, Integer> worker = new SwingWorker<>() {
+                private final List<String> failedFiles = new ArrayList<>();
 
                 @Override
                 protected Integer doInBackground() throws Exception {
                     int successCount = 0;
-                    for (FTPFile file : filesToDownload) {
+                    for (int i = 0; i < filesToDownload.size(); i++) {
+                        FTPFile file = filesToDownload.get(i);
+                        progressDialog.setCurrentFile(file.getName(), i + 1, filesToDownload.size());
+                        File localFile = new File(destinationDirectory, file.getName());
                         try {
-                            File localFile = new File(destinationDirectory, file.getName());
-                            downloadFile(fileList.getControlWriter(), fileList.getControlReader(), file.getName(), localFile);
+                            long totalSize = getFileSize(fileList.getControlWriter(), fileList.getControlReader(), file.getName());
+
+                            // 1. Mở kết nối dữ liệu bằng chế độ passive
+                            try (Socket dataSocket = Passive.openDataConnection(fileList.getControlReader(), fileList.getControlWriter());
+                                 InputStream dataIn = dataSocket.getInputStream();
+                                 FileOutputStream fileOut = new FileOutputStream(localFile)) {
+
+                                // 2. Gửi lệnh RETR (Retrieve) qua kết nối điều khiển.
+                                fileList.getControlWriter().println("RETR " + file.getName());
+
+                                // 3. Đọc phản hồi ban đầu (ví dụ: 150)
+                                String retrResponse = fileList.getControlReader().readLine();
+                                if (retrResponse == null || !retrResponse.startsWith("150")) {
+                                    throw new IOException("Không thể tải tệp: " + retrResponse);
+                                }
+
+                                // 4. Đọc từ kết nối dữ liệu, ghi vào tệp cục bộ và báo cáo tiến trình
+                                byte[] buffer = new byte[BUFFER_SIZE];
+                                int bytesRead;
+                                long totalBytesRead = 0;
+                                while ((bytesRead = dataIn.read(buffer)) != -1) {
+                                    fileOut.write(buffer, 0, bytesRead);
+                                    totalBytesRead += bytesRead;
+                                    if (totalSize > 0) {
+                                        int progress = (int) ((totalBytesRead * 100) / totalSize);
+                                        publish(progress); // Gọi publish trực tiếp từ trong SwingWorker
+                                    }
+                                }
+                                fileOut.flush();
+                            }
+                            publish(100); // Đảm bảo thanh tiến trình đạt 100%
+
+                            // 5. Đọc phản hồi cuối cùng trên kết nối điều khiển (ví dụ: 226 Transfer complete).
+                            String finalResponse = fileList.getControlReader().readLine();
+                            if (finalResponse == null || !finalResponse.startsWith("226")) {
+                                throw new IOException("Quá trình tải tệp có thể chưa hoàn tất: " + finalResponse);
+                            }
                             successCount++;
                         } catch (IOException e) {
                             failedFiles.add(file.getName() + " (" + e.getMessage() + ")");
                         }
                     }
                     return successCount;
+                }
+
+                @Override
+                protected void process(List<Integer> chunks) {
+                    // Lấy giá trị tiến trình cuối cùng được publish
+                    if (!chunks.isEmpty()) {
+                        int latestProgress = chunks.get(chunks.size() - 1);
+                        progressDialog.updateProgress(latestProgress);
+                    }
                 }
 
                 @Override
@@ -133,9 +166,13 @@ public class Retrieve {
                         JOptionPane.showMessageDialog(fileList, "Đã xảy ra lỗi không mong muốn: " + e.getMessage(), "Lỗi nghiêm trọng", JOptionPane.ERROR_MESSAGE);
                         e.printStackTrace();
                     }
+                    finally {
+                        progressDialog.closeDialog();
+                    }
                 }
             };
             worker.execute();
+            progressDialog.setVisible(true); // Hiển thị dialog sau khi worker bắt đầu
         }
     }
 
@@ -173,6 +210,45 @@ public class Retrieve {
             controlReader.readLine(); // Đọc và bỏ qua phản hồi 226
 
             return fileContent.toString();
+        }
+    }
+
+    /**
+     * Lấy nội dung của một tệp từ máy chủ FTP dưới dạng mảng byte.
+     * Phương thức này phù hợp để tải các tệp nhị phân như ảnh.
+     *
+     * @param controlReader Trình đọc cho kết nối điều khiển.
+     * @param controlWriter Trình ghi cho kết nối điều khiển.
+     * @param filename      Tên của tệp cần tải về.
+     * @return Một mảng byte chứa dữ liệu của tệp.
+     * @throws IOException nếu có lỗi trong quá trình giao tiếp FTP.
+     */
+    public static byte[] getFileBytes(BufferedReader controlReader, PrintWriter controlWriter, String filename) throws IOException {
+        // 1. Mở kết nối dữ liệu bằng chế độ passive.
+        try (Socket dataSocket = Passive.openDataConnection(controlReader, controlWriter);
+             InputStream dataIn = dataSocket.getInputStream();
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+            // 2. Gửi lệnh RETR (Retrieve) qua kết nối điều khiển.
+            controlWriter.println("RETR " + filename);
+
+            // 3. Đọc phản hồi ban đầu (ví dụ: 150).
+            String retrResponse = controlReader.readLine();
+            if (retrResponse == null || !retrResponse.startsWith("150")) {
+                throw new IOException("Không thể tải tệp: " + retrResponse);
+            }
+
+            // 4. Đọc dữ liệu từ kết nối dữ liệu và ghi vào ByteArrayOutputStream.
+            byte[] buffer = new byte[BUFFER_SIZE];
+            int bytesRead;
+            while ((bytesRead = dataIn.read(buffer)) != -1) {
+                baos.write(buffer, 0, bytesRead);
+            }
+
+            // 5. Đọc phản hồi cuối cùng trên kết nối điều khiển (ví dụ: 226 Transfer complete).
+            controlReader.readLine(); // Đọc và bỏ qua phản hồi 226
+
+            return baos.toByteArray();
         }
     }
 }

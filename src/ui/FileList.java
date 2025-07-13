@@ -172,12 +172,29 @@ public class FileList extends JFrame {
                 e.printStackTrace();
             }
         } else {
-            // Nếu là tệp, mở cửa sổ xem tệp.
-            // Cửa sổ FileViewer sẽ tự xử lý việc tải nội dung.
-            new FileViewer(selectedFile.getName(), controlWriter, controlReader);
+            // Nếu là tệp, kiểm tra xem đó có phải là tệp ảnh không.
+            String filename = selectedFile.getName();
+            if (isImageFile(filename)) {
+                // Mở bằng trình xem ảnh mới
+                new ImageViewer(filename, controlWriter, controlReader);
+            } else {
+                // Mở bằng trình xem văn bản mặc định
+                new FileViewer(filename, controlWriter, controlReader);
+            }
         }
     }
 
+    /**
+     * Kiểm tra xem một tệp có phải là tệp ảnh dựa trên phần mở rộng hay không.
+     * @param filename Tên tệp.
+     * @return true nếu là tệp ảnh, ngược lại là false.
+     */
+    private boolean isImageFile(String filename) {
+        String lowerCaseName = filename.toLowerCase();
+        return lowerCaseName.endsWith(".png") || lowerCaseName.endsWith(".jpg") ||
+               lowerCaseName.endsWith(".jpeg") || lowerCaseName.endsWith(".gif") ||
+               lowerCaseName.endsWith(".bmp");
+    }
     /**
      * Lấy danh sách tệp từ máy chủ và điền vào bảng.
      */

@@ -18,7 +18,6 @@ public class Cwd {
     public static boolean changeDirectory(PrintWriter writer, BufferedReader reader, String path) throws IOException {
         writer.println("CWD " + path);
         String response = reader.readLine();
-        System.out.println("CWD Response: " + response); // Dùng để debug
 
         // Mã 250 chỉ ra rằng hành động đã thành công.
         return response != null && response.startsWith("250");

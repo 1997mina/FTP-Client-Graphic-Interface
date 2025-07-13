@@ -20,7 +20,6 @@ public class Cdup {
     private static boolean goUp(PrintWriter writer, BufferedReader reader) throws IOException {
         writer.println("CDUP");
         String response = reader.readLine();
-        System.out.println("CDUP Response: " + response); // Dùng để debug
 
         // Mã 250 hoặc 200 đều chỉ ra rằng hành động đã thành công.
         return response != null && (response.startsWith("250") || response.startsWith("200"));

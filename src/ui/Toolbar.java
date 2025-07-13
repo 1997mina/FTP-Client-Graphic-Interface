@@ -5,6 +5,7 @@ import methods.Delete;
 import methods.Cdup;
 import methods.Retrieve;
 import methods.Rename;
+import methods.Mkdir;
 import methods.Store;
 
 import javax.swing.ImageIcon;
@@ -28,6 +29,7 @@ public class Toolbar extends JToolBar {
     public final JButton uploadButton;
     public final JButton deleteButton;
     public final JButton renameButton;
+    public final JButton createDirButton;
 
     @SuppressWarnings("unused")
     public Toolbar(FileList fileList) {
@@ -41,12 +43,14 @@ public class Toolbar extends JToolBar {
         renameButton = createToolbarButton("rename.png", "Đổi tên");
         downloadButton = createToolbarButton("download.png", "Tải xuống");
         uploadButton = createToolbarButton("upload.png", "Tải lên");
-        deleteButton = createToolbarButton("delete.png", "Xóa tệp");
+        deleteButton = createToolbarButton("delete.png", "Xóa");
+        createDirButton = createToolbarButton("newfolder.png", "Thư mục mới");
 
         // Thêm các nút vào thanh công cụ
         add(backButton);
         add(refreshButton);
         addSeparator();
+        add(createDirButton);
         add(renameButton);
         add(downloadButton);
         add(uploadButton);
@@ -58,6 +62,7 @@ public class Toolbar extends JToolBar {
         deleteButton.addActionListener(e -> Delete.handleDeleteAction(fileList));
         renameButton.addActionListener(e -> Rename.handleRenameAction(fileList));
         uploadButton.addActionListener(e -> Store.handleUploadAction(fileList));
+        createDirButton.addActionListener(e -> Mkdir.handleCreateDirectoryAction(fileList));
         downloadButton.addActionListener(e -> Retrieve.handleDownloadAction(fileList));
     }
 

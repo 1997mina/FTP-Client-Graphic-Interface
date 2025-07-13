@@ -51,7 +51,7 @@ public class Delete {
         }
 
         // Tạo thông báo xác nhận để người dùng chắc chắn về hành động của mình.
-        String message = "Bạn có chắc chắn muốn xóa vĩnh viễn " + filesToDelete.size() + " mục đã chọn không?";
+        String message = "Bạn có chắc chắn muốn xóa " + filesToDelete.size() + " mục đã chọn không?";
         int result = JOptionPane.showConfirmDialog(fileList, message, "Xác nhận Xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
         if (result == JOptionPane.YES_OPTION) {

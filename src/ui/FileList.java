@@ -115,6 +115,7 @@ public class FileList extends JFrame {
 
         fileTable = new JTable(tableModel);
         fileTable.setFont(new Font("Segoe UI", Font.PLAIN, 14)); // Tăng cỡ chữ
+        fileTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION); // Cho phép chọn nhiều hàng
         fileTable.setRowHeight(25); // Tăng chiều cao hàng để icon hiển thị đẹp hơn
 
         // Thêm trình nghe sự kiện nhấp đúp chuột

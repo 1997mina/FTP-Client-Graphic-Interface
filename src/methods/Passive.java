@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class Pasv {
+public class Passive {
     /**
      * Enters passive mode and establishes a data connection.
      * @param controlReader The reader for the control connection.

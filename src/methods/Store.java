@@ -5,6 +5,7 @@ import ui.FileList;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,7 +14,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class Stor {
+public class Store {
     private static final int BUFFER_SIZE = 4096;
 
     /**
@@ -26,7 +27,7 @@ public class Stor {
      */
     private static void uploadFile(PrintWriter controlWriter, BufferedReader controlReader, File localFile) throws IOException {
         // 1. Mở kết nối dữ liệu bằng chế độ passive.
-        try (Socket dataSocket = Pasv.openDataConnection(controlReader, controlWriter);
+        try (Socket dataSocket = Passive.openDataConnection(controlReader, controlWriter);
              OutputStream dataOut = dataSocket.getOutputStream();
              FileInputStream fileIn = new FileInputStream(localFile)) {
 

@@ -19,7 +19,7 @@ public class List {
      */
     public static String getFileList(BufferedReader controlReader, PrintWriter controlWriter) throws IOException {
         // 1. Mở kết nối dữ liệu bằng chế độ passive.
-        try (Socket dataSocket = Pasv.openDataConnection(controlReader, controlWriter);
+        try (Socket dataSocket = Passive.openDataConnection(controlReader, controlWriter);
              BufferedReader dataReader = new BufferedReader(new InputStreamReader(dataSocket.getInputStream()))) {
 
             // 2. Gửi lệnh LIST qua kết nối điều khiển.

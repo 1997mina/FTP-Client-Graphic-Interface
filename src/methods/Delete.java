@@ -4,60 +4,81 @@ import filemanager.FTPFile;
 import ui.FileList;
 
 import javax.swing.JOptionPane;
+import javax.swing.SwingWorker;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Delete {
-    /**
-     * Gửi lệnh DELE để xóa một tệp trên máy chủ FTP.
-     *
-     * @param writer   PrintWriter để gửi lệnh đến máy chủ.
-     * @param reader   BufferedReader để đọc phản hồi từ máy chủ.
-     * @param fileName Tên của tệp cần xóa.
-     * @return true nếu xóa thành công, false nếu thất bại.
-     * @throws IOException Nếu có lỗi giao tiếp mạng.
-     */
-    public static boolean deleteFile(PrintWriter writer, BufferedReader reader, String fileName) throws IOException {
-        writer.println("DELE " + fileName);
-        String response = reader.readLine();
 
-        // Mã 250 chỉ ra rằng hành động đã thành công.
-        return response != null && response.startsWith("250");
+    /**
+     * Gửi lệnh xóa (DELE cho tệp, RMD cho thư mục) đến máy chủ FTP.
+     *
+     * @param controlWriter Trình ghi để gửi lệnh.
+     * @param controlReader Trình đọc để đọc phản hồi.
+     * @param fileToDelete  Tệp hoặc thư mục cần xóa.
+     * @throws IOException Nếu có lỗi giao tiếp hoặc máy chủ từ chối xóa.
+     */
+    private static void deleteItem(PrintWriter controlWriter, BufferedReader controlReader, FTPFile fileToDelete) throws IOException {
+        // Chọn lệnh phù hợp: RMD cho thư mục, DELE cho tệp
+        String command = fileToDelete.isDirectory() ? "RMD " : "DELE ";
+        controlWriter.println(command + fileToDelete.getName());
+
+        String response = controlReader.readLine();
+        // Mã 250 thường chỉ ra thành công cho DELE và RMD.
+        if (response == null || !response.startsWith("250")) {
+            throw new IOException("Không thể xóa '" + fileToDelete.getName() + "': " + response);
+        }
     }
 
     /**
-     * Xử lý toàn bộ quy trình xóa tệp, bao gồm cả tương tác với người dùng.
+     * Xử lý hành động xóa các tệp/thư mục đã chọn từ giao diện người dùng.
+     *
      * @param fileList Tham chiếu đến giao diện FileList để truy cập các thành phần UI và trạng thái.
      */
     public static void handleDeleteAction(FileList fileList) {
-        int selectedRow = fileList.getFileTable().getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(fileList, "Vui lòng chọn một tệp để xóa.", "Chưa chọn tệp", JOptionPane.INFORMATION_MESSAGE);
-            return;
+        int[] selectedRows = fileList.getFileTable().getSelectedRows();
+
+        if (selectedRows.length == 0) {
+            return; // Không có gì được chọn, không làm gì cả.
         }
 
-        FTPFile fileToDelete = fileList.getCurrentFiles().get(selectedRow);
-
-        if (fileToDelete.isDirectory()) {
-            JOptionPane.showMessageDialog(fileList, "Không thể xóa thư mục bằng chức năng này.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return;
+        List<FTPFile> filesToDelete = new ArrayList<>();
+        for (int row : selectedRows) {
+            filesToDelete.add(fileList.getCurrentFiles().get(row));
         }
 
-        int choice = JOptionPane.showConfirmDialog(fileList, "Bạn có chắc chắn muốn xóa tệp '" + fileToDelete.getName() + "' không?\nHành động này không thể hoàn tác.", "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        // Tạo thông báo xác nhận để người dùng chắc chắn về hành động của mình.
+        String message = "Bạn có chắc chắn muốn xóa vĩnh viễn " + filesToDelete.size() + " mục đã chọn không?";
+        int result = JOptionPane.showConfirmDialog(fileList, message, "Xác nhận Xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
-        if (choice == JOptionPane.YES_OPTION) {
-            try {
-                if (deleteFile(fileList.getControlWriter(), fileList.getControlReader(), fileToDelete.getName())) {
-                    JOptionPane.showMessageDialog(fileList, "Đã xóa tệp thành công.", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-                    fileList.refreshFileList(); // Tải lại danh sách tệp
-                } else {
-                    JOptionPane.showMessageDialog(fileList, "Không thể xóa tệp. Vui lòng kiểm tra quyền hạn của bạn.", "Lỗi Xóa", JOptionPane.ERROR_MESSAGE);
+        if (result == JOptionPane.YES_OPTION) {
+            // Sử dụng SwingWorker để thực hiện việc xóa trên một luồng nền, tránh làm treo UI.
+            SwingWorker<Void, Void> worker = new SwingWorker<>() {
+                @Override
+                protected Void doInBackground() throws Exception {
+                    for (FTPFile file : filesToDelete) {
+                        deleteItem(fileList.getControlWriter(), fileList.getControlReader(), file);
+                    }
+                    return null;
                 }
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(fileList, "Lỗi mạng khi đang xóa tệp: " + ex.getMessage(), "Lỗi Mạng", JOptionPane.ERROR_MESSAGE);
-                ex.printStackTrace();
-            }
+
+                @Override
+                protected void done() {
+                    try {
+                        get(); // Gọi get() để bắt các exception có thể xảy ra trong doInBackground.
+                        JOptionPane.showMessageDialog(fileList, "Đã xóa thành công " + filesToDelete.size() + " mục.", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    } catch (Exception e) {
+                        JOptionPane.showMessageDialog(fileList, "Lỗi khi đang xóa: " + e.getMessage(), "Lỗi Xóa", JOptionPane.ERROR_MESSAGE);
+                        e.printStackTrace();
+                    } finally {
+                        fileList.refreshFileList(); // Luôn làm mới danh sách tệp để cập nhật giao diện.
+                    }
+                }
+            };
+            worker.execute();
         }
     }
 }

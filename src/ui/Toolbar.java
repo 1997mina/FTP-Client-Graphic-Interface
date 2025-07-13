@@ -3,8 +3,9 @@ package ui;
 import filemanager.FTPFile;
 import methods.Delete;
 import methods.Cdup;
+import methods.Retrieve;
 import methods.Rename;
-import methods.Stor;
+import methods.Store;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -38,7 +39,7 @@ public class Toolbar extends JToolBar {
         backButton = createToolbarButton("back.png", "Quay lại");
         refreshButton = createToolbarButton("refresh.png", "Tải lại");
         renameButton = createToolbarButton("rename.png", "Đổi tên");
-        downloadButton = createToolbarButton("download.png", "Tải xuống (chưa hoạt động)");
+        downloadButton = createToolbarButton("download.png", "Tải xuống");
         uploadButton = createToolbarButton("upload.png", "Tải lên");
         deleteButton = createToolbarButton("delete.png", "Xóa tệp");
 
@@ -56,7 +57,8 @@ public class Toolbar extends JToolBar {
         refreshButton.addActionListener(e -> fileList.refreshFileList());
         deleteButton.addActionListener(e -> Delete.handleDeleteAction(fileList));
         renameButton.addActionListener(e -> Rename.handleRenameAction(fileList));
-        uploadButton.addActionListener(e -> Stor.handleUploadAction(fileList));
+        uploadButton.addActionListener(e -> Store.handleUploadAction(fileList));
+        downloadButton.addActionListener(e -> Retrieve.handleDownloadAction(fileList));
     }
 
     /**
@@ -64,7 +66,8 @@ public class Toolbar extends JToolBar {
      * dựa trên mục đang được chọn trong bảng.
      */
     public void updateButtonStates() {
-        int selectedRow = fileList.getFileTable().getSelectedRow();
+        int[] selectedRows = fileList.getFileTable().getSelectedRows();
+        int selectionCount = selectedRows.length;
 
         // Vô hiệu hóa nút "Quay lại" nếu đang ở thư mục gốc
         String currentPath = fileList.getCurrentPath();
@@ -72,18 +75,29 @@ public class Toolbar extends JToolBar {
 
         uploadButton.setEnabled(true);
 
-        // Vô hiệu hóa các nút nếu không có mục nào được chọn
-        if (selectedRow == -1) { // Không có mục nào được chọn
+        if (selectionCount == 0) { // Không có mục nào được chọn
             downloadButton.setEnabled(false);
             deleteButton.setEnabled(false);
             renameButton.setEnabled(false);
-        } else { // Có một mục được chọn
-            FTPFile selectedFile = fileList.getCurrentFiles().get(selectedRow);
+        } else if (selectionCount == 1) { // Có đúng một mục được chọn
+            FTPFile selectedFile = fileList.getCurrentFiles().get(selectedRows[0]);
             boolean isFile = !selectedFile.isDirectory();
 
             downloadButton.setEnabled(isFile);
-            deleteButton.setEnabled(isFile);
-            renameButton.setEnabled(true); // Luôn bật khi có mục được chọn
+            deleteButton.setEnabled(true);
+            renameButton.setEnabled(true);
+        } else { // Có nhiều mục được chọn
+            // Bật nút tải xuống nếu có ít nhất một tệp trong các mục đã chọn.
+            boolean hasFile = false;
+            for (int row : selectedRows) {
+                if (!fileList.getCurrentFiles().get(row).isDirectory()) {
+                    hasFile = true;
+                    break;
+                }
+            }
+            downloadButton.setEnabled(hasFile);
+            deleteButton.setEnabled(true);    // Cho phép xóa nhiều mục
+            renameButton.setEnabled(false);   // Không cho phép đổi tên nhiều mục
         }
     }
 

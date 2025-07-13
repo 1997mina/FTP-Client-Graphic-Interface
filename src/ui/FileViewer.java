@@ -1,6 +1,6 @@
 package ui;
 
-import methods.Retr;
+import methods.Retrieve;
 
 import javax.swing.*;
 import java.awt.*;
@@ -46,7 +46,7 @@ public class FileViewer extends JFrame {
             @Override
             protected String doInBackground() throws Exception {
                 // Thực hiện việc tải tệp ở đây
-                return Retr.getFileContent(controlReader, controlWriter, filename);
+                return Retrieve.getFileContent(controlReader, controlWriter, filename);
             }
 
             @Override

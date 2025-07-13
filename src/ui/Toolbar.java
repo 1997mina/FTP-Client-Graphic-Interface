@@ -4,6 +4,7 @@ import filemanager.FTPFile;
 import methods.Delete;
 import methods.Cdup;
 import methods.Rename;
+import methods.Stor;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -27,6 +28,7 @@ public class Toolbar extends JToolBar {
     public final JButton deleteButton;
     public final JButton renameButton;
 
+    @SuppressWarnings("unused")
     public Toolbar(FileList fileList) {
         this.fileList = fileList;
 
@@ -37,7 +39,7 @@ public class Toolbar extends JToolBar {
         refreshButton = createToolbarButton("refresh.png", "Tải lại");
         renameButton = createToolbarButton("rename.png", "Đổi tên");
         downloadButton = createToolbarButton("download.png", "Tải xuống (chưa hoạt động)");
-        uploadButton = createToolbarButton("upload.png", "Tải lên (chưa hoạt động)");
+        uploadButton = createToolbarButton("upload.png", "Tải lên");
         deleteButton = createToolbarButton("delete.png", "Xóa tệp");
 
         // Thêm các nút vào thanh công cụ
@@ -49,19 +51,12 @@ public class Toolbar extends JToolBar {
         add(uploadButton);
         add(deleteButton);
 
-        addListeners();
-    }
-
-    /**
-     * Gán các trình xử lý sự kiện cho các thành phần UI, chẳng hạn như các nút trên thanh công cụ.
-     */
-    @SuppressWarnings("unused")
-    private void addListeners() {
+        // Gán các trình xử lý sự kiện cho các thành phần UI, chẳng hạn như các nút trên thanh công cụ.
         backButton.addActionListener(e -> Cdup.handleBackAction(fileList));
         refreshButton.addActionListener(e -> fileList.refreshFileList());
         deleteButton.addActionListener(e -> Delete.handleDeleteAction(fileList));
         renameButton.addActionListener(e -> Rename.handleRenameAction(fileList));
-        fileList.getFileTable().getSelectionModel().addListSelectionListener(e -> updateButtonStates());
+        uploadButton.addActionListener(e -> Stor.handleUploadAction(fileList));
     }
 
     /**
@@ -70,7 +65,11 @@ public class Toolbar extends JToolBar {
      */
     public void updateButtonStates() {
         int selectedRow = fileList.getFileTable().getSelectedRow();
-        backButton.setEnabled(true); // Nút Back luôn được bật
+
+        // Vô hiệu hóa nút "Quay lại" nếu đang ở thư mục gốc
+        String currentPath = fileList.getCurrentPath();
+        backButton.setEnabled(currentPath != null && !currentPath.equals("/"));
+
         uploadButton.setEnabled(true);
 
         // Vô hiệu hóa các nút nếu không có mục nào được chọn

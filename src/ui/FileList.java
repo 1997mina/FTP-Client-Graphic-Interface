@@ -1,11 +1,7 @@
 package ui;
 
-import methods.Cwd;
-import methods.Quit;
-import methods.List;
-
-import filemanager.FTPFile;
-import filemanager.FTPFileParser;
+import methods.*;
+import filemanager.*;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
@@ -33,7 +29,9 @@ public class FileList extends JFrame {
     private JTable fileTable;
     private DefaultTableModel tableModel;
     private Toolbar toolbar; // Thêm một tham chiếu đến toolbar
+    private JTextField pathField; // Thêm trường để hiển thị đường dẫn
     private java.util.List<FTPFile> currentFiles;
+    private String currentPath;
 
     /**
      * Tạo một cửa sổ mới để hiển thị danh sách các tệp từ máy chủ FTP dưới dạng bảng.
@@ -41,6 +39,7 @@ public class FileList extends JFrame {
      * @param controlReader Luồng để đọc phản hồi từ server.
      * @param controlWriter Luồng để gửi lệnh đến server.
      */
+    @SuppressWarnings("unused")
     public FileList(Socket controlSocket, BufferedReader controlReader, PrintWriter controlWriter) {
         this.controlReader = controlReader;
         this.controlWriter = controlWriter;
@@ -48,7 +47,7 @@ public class FileList extends JFrame {
         // Thiết lập layout chính cho JFrame để có thể đặt toolbar ở trên
         setLayout(new BorderLayout());
 
-        setTitle("Danh sách tệp trên Server");
+        setTitle("Trình quản lý tệp trên Server");
         setSize(800, 600);
         // Thay đổi hành vi đóng mặc định và thêm listener để dọn dẹp tài nguyên
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -56,12 +55,29 @@ public class FileList extends JFrame {
 
         // Gán một thực thể của lớp Quit làm trình xử lý sự kiện đóng cửa sổ
         addWindowListener(new Quit(controlWriter, controlReader, controlSocket));
+
+        // Khởi tạo bảng trước để nó có thể được tham chiếu bởi các thành phần khác như Toolbar
         initializeTable();
 
-        // Thêm thanh công cụ vào phía trên (Bắc) của cửa sổ
-        this.toolbar = new Toolbar(this);
-        add(this.toolbar, BorderLayout.NORTH);
+        // Tạo trường hiển thị đường dẫn
+        pathField = new JTextField();
+        pathField.setEditable(false);
+        pathField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        pathField.setBorder(BorderFactory.createCompoundBorder(
+            pathField.getBorder(),
+            BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 
+        // Thêm thanh công cụ
+        this.toolbar = new Toolbar(this);
+
+        // Thêm listener cho bảng sau khi toolbar đã được tạo để cập nhật trạng thái nút
+        fileTable.getSelectionModel().addListSelectionListener(e -> this.toolbar.updateButtonStates());
+        // Tạo một panel để chứa cả toolbar và trường đường dẫn
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.add(this.toolbar, BorderLayout.NORTH);
+        topPanel.add(pathField, BorderLayout.SOUTH);
+
+        add(topPanel, BorderLayout.NORTH);
         refreshFileList();
 
         setVisible(true);
@@ -73,8 +89,8 @@ public class FileList extends JFrame {
     public JTable getFileTable() { return fileTable; }
     public java.util.List<FTPFile> getCurrentFiles() { return currentFiles; }
     public PrintWriter getControlWriter() { return controlWriter; }
-    public BufferedReader getControlReader() { return controlReader;
-    }
+    public BufferedReader getControlReader() { return controlReader; }
+    public String getCurrentPath() { return currentPath; }
 
     private void initializeTable() {
         // Định nghĩa các cột cho bảng
@@ -154,6 +170,10 @@ public class FileList extends JFrame {
                 JOptionPane.showMessageDialog(this, "Lỗi mạng khi đổi thư mục: " + e.getMessage(), "Lỗi Mạng", JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
+        } else {
+            // Nếu là tệp, mở cửa sổ xem tệp.
+            // Cửa sổ FileViewer sẽ tự xử lý việc tải nội dung.
+            new FileViewer(selectedFile.getName(), controlWriter, controlReader);
         }
     }
 
@@ -162,6 +182,11 @@ public class FileList extends JFrame {
      */
     public void refreshFileList() {
         try {
+            // Lấy đường dẫn hiện tại trước khi làm mới danh sách
+            this.currentPath = Pwd.getCurrentDirectory(controlWriter, controlReader);
+            // Cập nhật trường hiển thị đường dẫn
+            pathField.setText(this.currentPath);
+
             String fileListString = List.getFileList(controlReader, controlWriter);
             this.currentFiles = FTPFileParser.parse(fileListString);
 

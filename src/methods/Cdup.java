@@ -18,7 +18,7 @@ public class Cdup {
      * @return true nếu thay đổi thư mục thành công, false nếu thất bại.
      * @throws IOException Nếu có lỗi giao tiếp mạng.
      */
-    private static boolean goUp(PrintWriter writer, BufferedReader reader) throws IOException {
+    public static boolean goUp(PrintWriter writer, BufferedReader reader) throws IOException {
         writer.println("CDUP");
         String response = reader.readLine();
 
@@ -34,8 +34,10 @@ public class Cdup {
         try {
             if (goUp(fileList.getControlWriter(), fileList.getControlReader())) {
                 fileList.refreshFileList();
+            } else {
+                // Không cần hiển thị lỗi nếu thất bại, vì có thể người dùng đã ở thư mục gốc.
+                // Tuy nhiên, có thể thêm một thông báo nhẹ nhàng trên thanh trạng thái nếu có.
             }
-            // Không cần hiển thị lỗi nếu thất bại, vì có thể người dùng đã ở thư mục gốc.
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(fileList, "Lỗi mạng khi thực hiện lệnh quay lại: " + ex.getMessage(), "Lỗi Mạng", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();

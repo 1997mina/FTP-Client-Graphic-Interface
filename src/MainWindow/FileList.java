@@ -118,17 +118,39 @@ public class FileList extends JFrame {
         fileTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION); // Cho phép chọn nhiều hàng
         fileTable.setRowHeight(25); // Tăng chiều cao hàng để icon hiển thị đẹp hơn
 
-        // Thêm trình nghe sự kiện nhấp đúp chuột
+        // Thêm trình nghe sự kiện chuột để xử lý nhấp đúp và nhấp chuột phải
         fileTable.addMouseListener(new MouseAdapter() {
-            public void mousePressed(MouseEvent mouseEvent) {
-                if (mouseEvent.getClickCount() == 2 && fileTable.getSelectedRow() != -1) {
+            private void showPopupMenu(MouseEvent e) {
+                int row = fileTable.rowAtPoint(e.getPoint());
+                if (row >= 0 && row < fileTable.getRowCount()) {
+                    // Nếu hàng được nhấp chuột phải chưa được chọn, hãy chọn nó.
+                    // Điều này đảm bảo rằng menu ngữ cảnh hoạt động trên đúng mục.
+                    if (!fileTable.isRowSelected(row)) {
+                        fileTable.setRowSelectionInterval(row, row);
+                    }
+                    PopUpMenu menu = new PopUpMenu(FileList.this);
+                    menu.show(e.getComponent(), e.getX(), e.getY());
+                }
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                // Xử lý nhấp đúp để mở tệp/thư mục
+                if (e.getClickCount() == 2 && fileTable.getSelectedRow() != -1) {
                     handleDoubleClick();
+                } else if (e.isPopupTrigger()) { // Dành cho Mac/Linux
+                    showPopupMenu(e);
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) { // Dành cho Windows
+                    showPopupMenu(e);
                 }
             }
         });
-
-        // Thiết lập chiều rộng cho cột icon
-        // In đậm header
+        // Xử lý header cho danh sách file
         JTableHeader header = fileTable.getTableHeader();
         header.setFont(header.getFont().deriveFont(Font.BOLD, 16)); // Tăng cỡ chữ header
 

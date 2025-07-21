@@ -18,13 +18,13 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
-public class Login extends JFrame {
+public class LoginWindow extends JFrame {
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JButton loginButton;
     private JLabel errorLabel;
 
-    public Login() {
+    public LoginWindow() {
         // Kiểm tra trạng thái server ngay khi khởi động
         checkServerStatus();
 

@@ -1,11 +1,10 @@
 package methods;
 
-import filemanager.FTPFile;
-
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 
 import MainWindow.FileList;
+import MainWindow.filemanager.FTPFile;
 
 import java.io.BufferedReader;
 import java.io.IOException;

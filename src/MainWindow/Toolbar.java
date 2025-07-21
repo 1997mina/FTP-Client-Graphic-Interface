@@ -1,6 +1,5 @@
 package MainWindow;
 
-import filemanager.FTPFile;
 import methods.Delete;
 import methods.Cdup;
 import methods.Retrieve;
@@ -11,6 +10,9 @@ import methods.Store;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JToolBar;
+
+import MainWindow.filemanager.FTPFile;
+
 import java.awt.Image;
 import java.io.File;
 

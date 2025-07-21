@@ -1,13 +1,14 @@
 package MainWindow;
 
 import methods.*;
-import filemanager.*;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
+
+import MainWindow.filemanager.*;
 
 import java.awt.BorderLayout;
 import java.awt.Font;

@@ -1,4 +1,4 @@
-package filemanager;
+package MainWindow.filemanager;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

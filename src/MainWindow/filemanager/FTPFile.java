@@ -1,4 +1,4 @@
-package filemanager;
+package MainWindow.filemanager;
 
 import java.util.Date;
 

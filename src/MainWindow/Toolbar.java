@@ -1,4 +1,4 @@
-package ui;
+package MainWindow;
 
 import filemanager.FTPFile;
 import methods.Delete;

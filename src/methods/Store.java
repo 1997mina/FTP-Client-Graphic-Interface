@@ -1,11 +1,11 @@
 package methods;
 
-import ui.FileList;
-import ui.ProgressDialog;
-
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
+
+import MainWindow.FileList;
+import MainWindow.ProgressDialog;
 
 import java.io.File;
 import java.io.FileInputStream;

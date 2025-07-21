@@ -1,4 +1,4 @@
-package login;
+package LoginWindow;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -7,7 +7,7 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
-import ui.FileList;
+import MainWindow.FileList;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;

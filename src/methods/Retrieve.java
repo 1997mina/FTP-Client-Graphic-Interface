@@ -1,10 +1,12 @@
 package methods;
 
 import filemanager.FTPFile;
-import ui.FileList;
-import ui.ProgressDialog;
 
 import javax.swing.*;
+
+import MainWindow.FileList;
+import MainWindow.ProgressDialog;
+
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package ui;
+package MainWindow;
 
 import methods.*;
 import filemanager.*;

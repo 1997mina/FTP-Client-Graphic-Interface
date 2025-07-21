@@ -1,4 +1,4 @@
-package ui;
+package MainWindow;
 
 import javax.swing.*;
 import java.awt.*;

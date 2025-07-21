@@ -9,8 +9,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 
-import java.awt.BorderLayout;
-import java.awt.Font;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -29,7 +28,7 @@ public class FileList extends JFrame {
     private JTable fileTable;
     private DefaultTableModel tableModel;
     private Toolbar toolbar; // Thêm một tham chiếu đến toolbar
-    private JTextField pathField; // Thêm trường để hiển thị đường dẫn
+    private PathPanel pathPanel; // Sử dụng lớp PathPanel chuyên dụng
     private java.util.List<FTPFile> currentFiles;
     private String currentPath;
 
@@ -59,13 +58,8 @@ public class FileList extends JFrame {
         // Khởi tạo bảng trước để nó có thể được tham chiếu bởi các thành phần khác như Toolbar
         initializeTable();
 
-        // Tạo trường hiển thị đường dẫn
-        pathField = new JTextField();
-        pathField.setEditable(false);
-        pathField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        pathField.setBorder(BorderFactory.createCompoundBorder(
-            pathField.getBorder(),
-            BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+        // Khởi tạo panel đường dẫn chuyên dụng
+        pathPanel = new PathPanel(this);
 
         // Thêm thanh công cụ
         this.toolbar = new Toolbar(this);
@@ -75,7 +69,7 @@ public class FileList extends JFrame {
         // Tạo một panel để chứa cả toolbar và trường đường dẫn
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(this.toolbar, BorderLayout.NORTH);
-        topPanel.add(pathField, BorderLayout.SOUTH);
+        topPanel.add(pathPanel, BorderLayout.SOUTH);
 
         add(topPanel, BorderLayout.NORTH);
         refreshFileList();
@@ -224,10 +218,10 @@ public class FileList extends JFrame {
         try {
             // Lấy đường dẫn hiện tại trước khi làm mới danh sách
             this.currentPath = Pwd.getCurrentDirectory(controlWriter, controlReader);
-            // Cập nhật trường hiển thị đường dẫn
-            pathField.setText(this.currentPath);
+            // Cập nhật thanh breadcrumbs thông qua lớp PathPanel
+            pathPanel.updatePath(this.currentPath);
 
-            String fileListString = List.getFileList(controlReader, controlWriter);
+            String fileListString = methods.List.getFileList(controlReader, controlWriter);
             this.currentFiles = FTPFileParser.parse(fileListString);
 
             // Xóa dữ liệu cũ trong bảng

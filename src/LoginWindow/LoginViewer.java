@@ -17,14 +17,15 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
-public class LoginWindow extends JFrame {
+public class LoginViewer extends JFrame {
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JButton loginButton;
     private JLabel errorLabel;
 
-    public LoginWindow() {
+    public LoginViewer() {
         // Kiểm tra trạng thái server ngay khi khởi động
         checkServerStatus();
 
@@ -124,5 +125,10 @@ public class LoginWindow extends JFrame {
             JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi I/O khi kiểm tra trạng thái server: " + e.getMessage(), "Lỗi I/O", JOptionPane.ERROR_MESSAGE);
             System.exit(0);
         }
+    }
+
+    public static void main(String[] args) {
+        // Run the GUI creation on the Event Dispatch Thread (EDT) for thread safety
+        SwingUtilities.invokeLater(() -> new LoginViewer());
     }
 }

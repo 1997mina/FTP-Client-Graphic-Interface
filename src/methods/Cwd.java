@@ -4,6 +4,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import javax.swing.JOptionPane;
+
+import MainWindow.FileList;
+
 public class Cwd {
 
     /**
@@ -21,5 +25,21 @@ public class Cwd {
 
         // Mã 250 chỉ ra rằng hành động đã thành công.
         return response != null && response.startsWith("250");
+    }
+
+    // Thêm phương thức này vào file methods/Cwd.java
+    public static void changeDirectoryAndRefresh(FileList fileList, String path) {
+        try {
+            if (changeDirectory(fileList.getControlWriter(), fileList.getControlReader(), path)) {
+                fileList.refreshFileList();
+            } else {
+                JOptionPane.showMessageDialog(fileList,
+                    "Không thể truy cập thư mục '" + path + "'.",
+                    "Lỗi Truy Cập", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(fileList, "Lỗi mạng khi đổi thư mục: " + e.getMessage(), "Lỗi Mạng", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
     }
 }

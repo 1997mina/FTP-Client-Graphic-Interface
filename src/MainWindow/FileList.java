@@ -1,6 +1,9 @@
 package MainWindow;
 
 import methods.*;
+import MainWindow.Applications.FileViewer;
+import MainWindow.Applications.ImageViewer;
+import MainWindow.Applications.VideoPlayer;
 import MainWindow.filemanager.*;
 
 import javax.swing.*;

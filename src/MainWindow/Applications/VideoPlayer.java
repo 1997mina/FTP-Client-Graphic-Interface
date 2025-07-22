@@ -1,5 +1,7 @@
-package MainWindow;
+package MainWindow.Applications;
 
+import MainWindow.FileList;
+import MainWindow.ProgressDialog;
 import MainWindow.filemanager.FTPFile;
 import methods.Passive;
 

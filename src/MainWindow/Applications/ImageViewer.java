@@ -1,4 +1,4 @@
-package MainWindow;
+package MainWindow.Applications;
 
 import methods.Retrieve;
 

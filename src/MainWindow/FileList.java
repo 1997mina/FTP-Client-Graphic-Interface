@@ -1,9 +1,7 @@
 package MainWindow;
 
 import methods.*;
-import MainWindow.Applications.FileViewer;
-import MainWindow.Applications.ImageViewer;
-import MainWindow.Applications.VideoPlayer;
+import MainWindow.Applications.*;
 import MainWindow.filemanager.*;
 
 import javax.swing.*;
@@ -21,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import java.util.Comparator;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 
@@ -34,6 +33,10 @@ public class FileList extends JFrame {
     private PathPanel pathPanel; // Sử dụng lớp PathPanel chuyên dụng
     private java.util.List<FTPFile> currentFiles;
     private String currentPath;
+
+    public enum SortCriteria {
+        NAME, SIZE, DATE
+    }
 
     /**
      * Tạo một cửa sổ mới để hiển thị danh sách các tệp từ máy chủ FTP dưới dạng bảng.
@@ -119,15 +122,18 @@ public class FileList extends JFrame {
         fileTable.addMouseListener(new MouseAdapter() {
             private void showPopupMenu(MouseEvent e) {
                 int row = fileTable.rowAtPoint(e.getPoint());
+                // Nếu nhấp chuột phải vào một hàng, hãy chọn nó.
                 if (row >= 0 && row < fileTable.getRowCount()) {
-                    // Nếu hàng được nhấp chuột phải chưa được chọn, hãy chọn nó.
-                    // Điều này đảm bảo rằng menu ngữ cảnh hoạt động trên đúng mục.
                     if (!fileTable.isRowSelected(row)) {
                         fileTable.setRowSelectionInterval(row, row);
                     }
-                    PopUpMenu menu = new PopUpMenu(FileList.this);
-                    menu.show(e.getComponent(), e.getX(), e.getY());
+                } else {
+                    // Nếu nhấp vào vùng trống, hãy xóa lựa chọn
+                    fileTable.clearSelection();
                 }
+                // Luôn hiển thị menu
+                PopUpMenu menu = new PopUpMenu(FileList.this);
+                menu.show(e.getComponent(), e.getX(), e.getY());
             }
 
             @Override
@@ -229,6 +235,34 @@ public class FileList extends JFrame {
                lowerCaseName.endsWith(".mkv") || lowerCaseName.endsWith(".mov") ||
                lowerCaseName.endsWith(".wmv");
     }
+
+    /**
+     * Sắp xếp danh sách tệp hiện tại theo tiêu chí đã cho và cập nhật bảng.
+     * @param criteria Tiêu chí để sắp xếp (Tên, Kích thước, Ngày).
+     */
+    public void sortFileList(SortCriteria criteria) {
+        if (currentFiles == null || currentFiles.isEmpty()) {
+            return;
+        }
+
+        // Sắp xếp thư mục trước, sau đó đến tệp, rồi mới theo tiêu chí phụ.
+        Comparator<FTPFile> comparator = Comparator.comparing(FTPFile::isDirectory).reversed();
+
+        switch (criteria) {
+            case NAME:
+                comparator = comparator.thenComparing(FTPFile::getName, String.CASE_INSENSITIVE_ORDER);
+                break;
+            case SIZE:
+                comparator = comparator.thenComparingLong(FTPFile::getSize);
+                break;
+            case DATE:
+                comparator = comparator.thenComparing(FTPFile::getLastModified).reversed();
+                break;
+        }
+
+        currentFiles.sort(comparator);
+        updateTableDisplay();
+    }
     /**
      * Lấy danh sách tệp từ máy chủ và điền vào bảng.
      */
@@ -242,31 +276,39 @@ public class FileList extends JFrame {
             String fileListString = methods.List.getFileList(controlReader, controlWriter);
             this.currentFiles = FTPFileParser.parse(fileListString);
 
-            // Xóa dữ liệu cũ trong bảng
-            tableModel.setRowCount(0);
-
-            // Lấy icon hệ thống cho thư mục và file
-            Icon folderIcon = getSystemIcon(true);
-            Icon fileIcon = getSystemIcon(false);
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
-
-            // Thêm từng file/thư mục vào bảng
-            for (FTPFile ftpFile : this.currentFiles) {
-                Object[] rowData = {
-                        ftpFile.isDirectory() ? folderIcon : fileIcon,
-                        ftpFile.getName(),
-                        ftpFile.getFormattedSize(),
-                        sdf.format(ftpFile.getLastModified())
-                };
-                tableModel.addRow(rowData);
-            }
+            updateTableDisplay();
 
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách tệp: " + e.getMessage(), "Lỗi FTP", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
+    }
 
-        // Cập nhật trạng thái các nút sau khi làm mới danh sách
+    /**
+     * Xóa và vẽ lại bảng với dữ liệu từ `currentFiles`.
+     */
+    private void updateTableDisplay() {
+        // Xóa dữ liệu cũ trong bảng
+        tableModel.setRowCount(0);
+
+        if (currentFiles == null) return;
+
+        // Lấy icon hệ thống cho thư mục và file
+        Icon folderIcon = getSystemIcon(true);
+        Icon fileIcon = getSystemIcon(false);
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+
+        // Thêm từng file/thư mục vào bảng
+        for (FTPFile ftpFile : this.currentFiles) {
+            Object[] rowData = {
+                    ftpFile.isDirectory() ? folderIcon : fileIcon,
+                    ftpFile.getName(),
+                    ftpFile.getFormattedSize(),
+                    sdf.format(ftpFile.getLastModified())
+            };
+            tableModel.addRow(rowData);
+        }
+
         toolbar.updateButtonStates();
     }
 

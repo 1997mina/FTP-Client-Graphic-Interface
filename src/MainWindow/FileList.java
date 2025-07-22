@@ -193,6 +193,9 @@ public class FileList extends JFrame {
             if (isImageFile(filename)) {
                 // Mở bằng trình xem ảnh mới
                 new ImageViewer(filename, controlWriter, controlReader);
+            } else if (isVideoFile(filename)) {
+                // Tải và mở bằng trình phát video mặc định của hệ thống
+                VideoPlayer.openVideo(this, selectedFile);
             } else {
                 // Mở bằng trình xem văn bản mặc định
                 new FileViewer(filename, controlWriter, controlReader);
@@ -210,6 +213,18 @@ public class FileList extends JFrame {
         return lowerCaseName.endsWith(".png") || lowerCaseName.endsWith(".jpg") ||
                lowerCaseName.endsWith(".jpeg") || lowerCaseName.endsWith(".gif") ||
                lowerCaseName.endsWith(".bmp");
+    }
+
+    /**
+     * Kiểm tra xem một tệp có phải là tệp video dựa trên phần mở rộng hay không.
+     * @param filename Tên tệp.
+     * @return true nếu là tệp video, ngược lại là false.
+     */
+    private boolean isVideoFile(String filename) {
+        String lowerCaseName = filename.toLowerCase();
+        return lowerCaseName.endsWith(".mp4") || lowerCaseName.endsWith(".avi") ||
+               lowerCaseName.endsWith(".mkv") || lowerCaseName.endsWith(".mov") ||
+               lowerCaseName.endsWith(".wmv");
     }
     /**
      * Lấy danh sách tệp từ máy chủ và điền vào bảng.

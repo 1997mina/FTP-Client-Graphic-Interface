@@ -1,4 +1,4 @@
-package MainWindow.Applications;
+package MainWindow.Applications.Media;
 
 import MainWindow.FileList;
 import MainWindow.ProgressDialog;
@@ -10,7 +10,7 @@ import java.awt.*;
 import java.io.*;
 import java.net.Socket;
 
-public class VideoPlayer {
+public class MediaPlayer {
 
     private static final int BUFFER_SIZE = 4096;
 
@@ -20,11 +20,24 @@ public class VideoPlayer {
      * @param fileToOpen Tệp FTP video cần mở.
      */
     public static void openVideo(FileList fileList, FTPFile fileToOpen) {
+        openMedia(fileList, fileToOpen, MediaType.VIDEO);
+    }
+
+    /**
+     * Xử lý việc tải một tệp âm thanh về một thư mục tạm và mở nó bằng trình phát mặc định của hệ thống.
+     * @param fileList Tham chiếu đến FileList để truy cập trạng thái kết nối.
+     * @param fileToOpen Tệp FTP audio cần mở.
+     */
+    public static void openAudio(FileList fileList, FTPFile fileToOpen) {
+        openMedia(fileList, fileToOpen, MediaType.AUDIO);
+    }
+
+    private static void openMedia(FileList fileList, FTPFile fileToOpen, MediaType mediaType) {
         // Hỏi người dùng xác nhận trước khi tải
         int result = JOptionPane.showConfirmDialog(
                 fileList,
-                "Tệp này sẽ được tải về máy và mở bằng trình phát video mặc định.\nBạn có muốn tiếp tục?",
-                "Mở Video",
+                "Tệp này sẽ được tải về máy và mở bằng " + mediaType.getPlayerDescription() + " mặc định.\nBạn có muốn tiếp tục?",
+                "Mở " + mediaType.getTypeNameCapitalized(),
                 JOptionPane.YES_NO_OPTION
         );
 
@@ -32,13 +45,13 @@ public class VideoPlayer {
             return;
         }
 
-        ProgressDialog progressDialog = new ProgressDialog(fileList, "Đang tải video...");
+        ProgressDialog progressDialog = new ProgressDialog(fileList, "Đang tải " + mediaType.getTypeName() + "...");
 
         SwingWorker<File, Integer> worker = new SwingWorker<>() {
             @Override
             protected File doInBackground() throws Exception {
-                // Tạo một tệp tạm để lưu video
-                File tempFile = File.createTempFile("ftp-video-", "." + getFileExtension(fileToOpen.getName()));
+                // Tạo một tệp tạm để lưu media
+                File tempFile = File.createTempFile("ftp-" + mediaType.getTypeName() + "-", "." + getFileExtension(fileToOpen.getName()));
                 tempFile.deleteOnExit(); // Đánh dấu để xóa khi JVM thoát
 
                 // Lấy kích thước tệp để hiển thị tiến trình
@@ -97,7 +110,7 @@ public class VideoPlayer {
                         JOptionPane.showMessageDialog(fileList, "Không thể tự động mở tệp. Tệp đã được tải về tại:\n" + downloadedFile.getAbsolutePath(), "Lỗi", JOptionPane.WARNING_MESSAGE);
                     }
                 } catch (Exception e) {
-                    JOptionPane.showMessageDialog(fileList, "Không thể tải hoặc mở video: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(fileList, "Không thể tải hoặc mở " + mediaType.getTypeName() + ": " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
                     e.printStackTrace();
                 }
             }

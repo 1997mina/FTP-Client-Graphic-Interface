@@ -2,6 +2,7 @@ package MainWindow;
 
 import methods.*;
 import MainWindow.Applications.*;
+import MainWindow.Applications.Media.MediaPlayer;
 import MainWindow.filemanager.*;
 
 import javax.swing.*;
@@ -204,7 +205,10 @@ public class FileList extends JFrame {
                 new ImageViewer(filename, controlWriter, controlReader);
             } else if (isVideoFile(filename)) {
                 // Tải và mở bằng trình phát video mặc định của hệ thống
-                VideoPlayer.openVideo(this, selectedFile);
+                MediaPlayer.openVideo(this, selectedFile);
+            } else if (isAudioFile(filename)) {
+                // Tải và mở bằng trình phát audio mặc định của hệ thống
+                MediaPlayer.openAudio(this, selectedFile);
             } else {
                 // Mở bằng trình xem văn bản mặc định
                 new FileViewer(filename, controlWriter, controlReader);
@@ -237,6 +241,18 @@ public class FileList extends JFrame {
     }
 
     /**
+     * Kiểm tra xem một tệp có phải là tệp âm thanh dựa trên phần mở rộng hay không.
+     * @param filename Tên tệp.
+     * @return true nếu là tệp âm thanh, ngược lại là false.
+     */
+    private boolean isAudioFile(String filename) {
+        String lowerCaseName = filename.toLowerCase();
+        return lowerCaseName.endsWith(".mp3") || lowerCaseName.endsWith(".wav") ||
+               lowerCaseName.endsWith(".flac") || lowerCaseName.endsWith(".aac") ||
+               lowerCaseName.endsWith(".ogg");
+    }
+
+    /**
      * Sắp xếp danh sách tệp hiện tại theo tiêu chí đã cho và cập nhật bảng.
      * @param criteria Tiêu chí để sắp xếp (Tên, Kích thước, Ngày).
      */
@@ -253,7 +269,7 @@ public class FileList extends JFrame {
                 comparator = comparator.thenComparing(FTPFile::getName, String.CASE_INSENSITIVE_ORDER);
                 break;
             case SIZE:
-                comparator = comparator.thenComparingLong(FTPFile::getSize);
+                comparator = comparator.thenComparingLong(FTPFile::getSize).reversed();
                 break;
             case DATE:
                 comparator = comparator.thenComparing(FTPFile::getLastModified).reversed();

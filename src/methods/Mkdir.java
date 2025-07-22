@@ -45,7 +45,6 @@ public class Mkdir {
 
         try {
             if (createDirectory(fileList.getControlWriter(), fileList.getControlReader(), dirName.trim())) {
-                JOptionPane.showMessageDialog(fileList, "Đã tạo thư mục '" + dirName.trim() + "' thành công.", "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 fileList.refreshFileList();
             } else {
                 JOptionPane.showMessageDialog(fileList, "Không thể tạo thư mục. Tên có thể đã tồn tại hoặc không hợp lệ.", "Lỗi", JOptionPane.ERROR_MESSAGE);

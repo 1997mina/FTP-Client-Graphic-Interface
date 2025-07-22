@@ -56,6 +56,7 @@ public class Toolbar extends JToolBar {
         add(renameButton);
         add(downloadButton);
         add(uploadButton);
+        addSeparator();
         add(deleteButton);
 
         // Gán các trình xử lý sự kiện cho các thành phần UI, chẳng hạn như các nút trên thanh công cụ.

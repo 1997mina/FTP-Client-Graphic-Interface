@@ -60,7 +60,7 @@ public class Toolbar extends JToolBar {
         deleteButton.addActionListener(e -> Delete.handleDeleteAction(fileList));
         renameButton.addActionListener(e -> Rename.handleRenameAction(fileList));
         uploadButton.addActionListener(e -> Store.handleUploadAction(fileList));
-        createDirButton.addActionListener(e -> Mkdir.handleCreateDirectoryAction(fileList));
+        createDirButton.addActionListener(e -> Mkdir.initiateCreateDirectory(fileList));
         downloadButton.addActionListener(e -> Retrieve.handleDownloadAction(fileList));
     }
 
@@ -69,8 +69,8 @@ public class Toolbar extends JToolBar {
      * dựa trên mục đang được chọn trong bảng.
      */
     public void updateButtonStates() {
-        // Nếu đang trong quá trình đổi tên, vô hiệu hóa tất cả các nút để tránh xung đột
-        if (fileList.isRenaming) {
+        // Nếu đang trong quá trình chỉnh sửa (đổi tên hoặc tạo mới), vô hiệu hóa tất cả các nút
+        if (fileList.editMode != FileList.EditMode.NONE) {
             backButton.setEnabled(false);
             refreshButton.setEnabled(false);
             downloadButton.setEnabled(false);

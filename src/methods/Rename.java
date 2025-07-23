@@ -63,11 +63,11 @@ public class Rename {
      * kích hoạt chế độ chỉnh sửa của JTable.
      * @param fileList Tham chiếu đến FileList để truy cập các thành phần UI.
      */
-    public static void initiateRename(FileList fileList) {
+    public static void handleRenameAction(FileList fileList) {
         int selectedRow = fileList.getFileTable().getSelectedRow();
         if (selectedRow != -1) {
-            fileList.isRenaming = true;
-            fileList.renamingRow = selectedRow;
+            fileList.editMode = FileList.EditMode.RENAME;
+            fileList.editingRow = selectedRow;
 
             // Kích hoạt chế độ chỉnh sửa cho ô ở hàng đã chọn và cột "Tên" (index 1)
             fileList.getFileTable().editCellAt(selectedRow, 1);
@@ -85,14 +85,5 @@ public class Rename {
             // Cập nhật trạng thái của toolbar để vô hiệu hóa các nút khác
             fileList.getToolbar().updateButtonStates();
         }
-    }
-
-    /**
-     * Xử lý toàn bộ quy trình đổi tên, bao gồm cả tương tác với người dùng.
-     * @param fileList Tham chiếu đến giao diện FileList để truy cập các thành phần UI và trạng thái.
-     */
-    public static void handleRenameAction(FileList fileList) {
-        // Gọi phương thức chuyên dụng trong FileList để bắt đầu quá trình đổi tên
-        initiateRename(fileList);
     }
 }

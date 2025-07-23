@@ -37,8 +37,11 @@ public class FileList extends JFrame {
     private java.util.List<FTPFile> currentFiles;
     private String currentPath;
     // Biến trạng thái để kiểm soát việc đổi tên trực tiếp
-    public boolean isRenaming = false;
-    public int renamingRow = -1;
+    public enum EditMode {
+        NONE, RENAME, CREATE
+    }
+    public EditMode editMode = EditMode.NONE;
+    public int editingRow = -1;
 
     public enum SortCriteria {
         NAME, SIZE, DATE
@@ -98,6 +101,7 @@ public class FileList extends JFrame {
     public BufferedReader getControlReader() { return controlReader; }
     public String getCurrentPath() { return currentPath; }
     public Toolbar getToolbar() { return toolbar; }
+	public DefaultTableModel getTableModel() { return tableModel; }
 
     private void initializeTable() {
         // Định nghĩa các cột cho bảng
@@ -107,25 +111,33 @@ public class FileList extends JFrame {
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                // Chỉ cho phép chỉnh sửa cột "Tên" (index 1) nếu đang trong trạng thái đổi tên
-                return isRenaming && row == renamingRow && column == 1;
+                // Chỉ cho phép chỉnh sửa cột "Tên" (index 1) nếu đang trong trạng thái chỉnh sửa
+                return (editMode == EditMode.RENAME || editMode == EditMode.CREATE) && row == editingRow && column == 1;
             }
 
             @Override
             public void setValueAt(Object aValue, int row, int column) {
                 // Đảm bảo rằng việc đặt giá trị chỉ xảy ra khi đang trong chế độ đổi tên
-                if (isRenaming && row == renamingRow && column == 1) {
+                if (editMode != EditMode.NONE && row == editingRow && column == 1) {
                     String newName = ((String) aValue).trim();
-                    FTPFile fileToRename = currentFiles.get(row);
-                    String oldName = fileToRename.getName();
 
-                    if (!newName.isEmpty() && !newName.equals(oldName)) {
-                        Rename.performRename(FileList.this, oldName, newName);
-                    } else {
-                        // Nếu tên không thay đổi hoặc rỗng, cần phải vẽ lại ô
-                        // để loại bỏ trình chỉnh sửa mà không làm mới toàn bộ danh sách.
-                        // Điều này cũng xử lý trường hợp người dùng nhấn Escape.
-                        tableModel.fireTableCellUpdated(row, column);
+                    if (editMode == EditMode.RENAME) {
+                        FTPFile fileToRename = currentFiles.get(row);
+                        String oldName = fileToRename.getName();
+
+                        if (!newName.isEmpty() && !newName.equals(oldName)) {
+                            Rename.performRename(FileList.this, oldName, newName);
+                        } else {
+                            // Nếu tên không thay đổi, chỉ cần làm mới danh sách để thoát chế độ chỉnh sửa
+                            refreshFileList();
+                        }
+                    } else if (editMode == EditMode.CREATE) {
+                        if (!newName.isEmpty()) {
+                            Mkdir.performCreateDirectory(FileList.this, newName);
+                        } else {
+                            // Nếu người dùng không nhập tên, chỉ cần làm mới danh sách để loại bỏ hàng tạm thời
+                            refreshFileList();
+                        }
                     }
                 }
             }
@@ -154,16 +166,24 @@ public class FileList extends JFrame {
              * Nó đặt lại trạng thái đổi tên và cập nhật các nút trên thanh công cụ.
              */
             private void resetRenamingState() {
-                isRenaming = false;
-                renamingRow = -1;
+                editMode = EditMode.NONE;
+                editingRow = -1;
                 toolbar.updateButtonStates();
             }
 
             @Override
-            public void editingStopped(javax.swing.event.ChangeEvent e) { resetRenamingState(); }
+            public void editingStopped(javax.swing.event.ChangeEvent e) {
+                // Logic xử lý đã nằm trong setValueAt, nơi sẽ gọi refreshFileList().
+                // refreshFileList() sẽ tự động đặt lại trạng thái.
+            }
 
             @Override
-            public void editingCanceled(javax.swing.event.ChangeEvent e) { resetRenamingState(); }
+            public void editingCanceled(javax.swing.event.ChangeEvent e) {
+                if (editMode == EditMode.CREATE) {
+                    tableModel.removeRow(editingRow); // Xóa hàng tạm thời
+                }
+                resetRenamingState();
+            }
         });
 
         // Thêm trình nghe sự kiện chuột để xử lý nhấp đúp và nhấp chuột phải
@@ -330,6 +350,10 @@ public class FileList extends JFrame {
      * Lấy danh sách tệp từ máy chủ và điền vào bảng.
      */
     public void refreshFileList() {
+        // Đặt lại bất kỳ trạng thái chỉnh sửa nào trước khi làm mới
+        this.editMode = EditMode.NONE;
+        this.editingRow = -1;
+
         try {
             // Lấy đường dẫn hiện tại trước khi làm mới danh sách
             this.currentPath = Pwd.getCurrentDirectory(controlWriter, controlReader);
@@ -380,7 +404,7 @@ public class FileList extends JFrame {
      * @param isDirectory true để lấy icon thư mục, false để lấy icon file.
      * @return Icon tương ứng.
      */
-    private Icon getSystemIcon(boolean isDirectory) {
+	public Icon getSystemIcon(boolean isDirectory) {
         File tempFile = null;
         try {
             tempFile = isDirectory ? File.createTempFile("tempdir", "") : File.createTempFile("tempfile", ".tmp");

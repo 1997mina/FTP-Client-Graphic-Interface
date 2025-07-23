@@ -1,11 +1,6 @@
 package MainWindow;
 
-import methods.Delete;
-import methods.Cdup;
-import methods.Retrieve;
-import methods.Rename;
-import methods.Mkdir;
-import methods.Store;
+import methods.*;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -74,6 +69,18 @@ public class Toolbar extends JToolBar {
      * dựa trên mục đang được chọn trong bảng.
      */
     public void updateButtonStates() {
+        // Nếu đang trong quá trình đổi tên, vô hiệu hóa tất cả các nút để tránh xung đột
+        if (fileList.isRenaming) {
+            backButton.setEnabled(false);
+            refreshButton.setEnabled(false);
+            downloadButton.setEnabled(false);
+            uploadButton.setEnabled(false);
+            deleteButton.setEnabled(false);
+            renameButton.setEnabled(false);
+            createDirButton.setEnabled(false);
+            return;
+        }
+
         int[] selectedRows = fileList.getFileTable().getSelectedRows();
         int selectionCount = selectedRows.length;
 
@@ -82,6 +89,9 @@ public class Toolbar extends JToolBar {
         backButton.setEnabled(currentPath != null && !currentPath.equals("/"));
 
         uploadButton.setEnabled(true);
+        backButton.setEnabled(true);
+        refreshButton.setEnabled(true);
+        createDirButton.setEnabled(true);
 
         if (selectionCount == 0) { // Không có mục nào được chọn
             downloadButton.setEnabled(false);

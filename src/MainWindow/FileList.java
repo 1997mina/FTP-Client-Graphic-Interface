@@ -10,11 +10,13 @@ import javax.swing.filechooser.FileSystemView;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
+import javax.swing.event.CellEditorListener;
 
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import methods.Rename;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +36,9 @@ public class FileList extends JFrame {
     private PathPanel pathPanel; // Sử dụng lớp PathPanel chuyên dụng
     private java.util.List<FTPFile> currentFiles;
     private String currentPath;
+    // Biến trạng thái để kiểm soát việc đổi tên trực tiếp
+    public boolean isRenaming = false;
+    public int renamingRow = -1;
 
     public enum SortCriteria {
         NAME, SIZE, DATE
@@ -92,6 +97,7 @@ public class FileList extends JFrame {
     public PrintWriter getControlWriter() { return controlWriter; }
     public BufferedReader getControlReader() { return controlReader; }
     public String getCurrentPath() { return currentPath; }
+    public Toolbar getToolbar() { return toolbar; }
 
     private void initializeTable() {
         // Định nghĩa các cột cho bảng
@@ -101,7 +107,27 @@ public class FileList extends JFrame {
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false;
+                // Chỉ cho phép chỉnh sửa cột "Tên" (index 1) nếu đang trong trạng thái đổi tên
+                return isRenaming && row == renamingRow && column == 1;
+            }
+
+            @Override
+            public void setValueAt(Object aValue, int row, int column) {
+                // Đảm bảo rằng việc đặt giá trị chỉ xảy ra khi đang trong chế độ đổi tên
+                if (isRenaming && row == renamingRow && column == 1) {
+                    String newName = ((String) aValue).trim();
+                    FTPFile fileToRename = currentFiles.get(row);
+                    String oldName = fileToRename.getName();
+
+                    if (!newName.isEmpty() && !newName.equals(oldName)) {
+                        Rename.performRename(FileList.this, oldName, newName);
+                    } else {
+                        // Nếu tên không thay đổi hoặc rỗng, cần phải vẽ lại ô
+                        // để loại bỏ trình chỉnh sửa mà không làm mới toàn bộ danh sách.
+                        // Điều này cũng xử lý trường hợp người dùng nhấn Escape.
+                        tableModel.fireTableCellUpdated(row, column);
+                    }
+                }
             }
 
             // Quan trọng: Cho phép JTable hiển thị các đối tượng Icon
@@ -118,6 +144,27 @@ public class FileList extends JFrame {
         fileTable.setFont(new Font("Segoe UI", Font.PLAIN, 14)); // Tăng cỡ chữ
         fileTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION); // Cho phép chọn nhiều hàng
         fileTable.setRowHeight(25); // Tăng chiều cao hàng để icon hiển thị đẹp hơn
+
+        // Thêm listener để xử lý việc kết thúc hoặc hủy bỏ chỉnh sửa tên tệp.
+        // Điều này đảm bảo trạng thái `isRenaming` được đặt lại và các nút trên toolbar
+        // được kích hoạt lại một cách chính xác.
+        fileTable.getDefaultEditor(Object.class).addCellEditorListener(new CellEditorListener() {
+            /**
+             * Phương thức này được gọi khi việc chỉnh sửa kết thúc hoặc bị hủy.
+             * Nó đặt lại trạng thái đổi tên và cập nhật các nút trên thanh công cụ.
+             */
+            private void resetRenamingState() {
+                isRenaming = false;
+                renamingRow = -1;
+                toolbar.updateButtonStates();
+            }
+
+            @Override
+            public void editingStopped(javax.swing.event.ChangeEvent e) { resetRenamingState(); }
+
+            @Override
+            public void editingCanceled(javax.swing.event.ChangeEvent e) { resetRenamingState(); }
+        });
 
         // Thêm trình nghe sự kiện chuột để xử lý nhấp đúp và nhấp chuột phải
         fileTable.addMouseListener(new MouseAdapter() {

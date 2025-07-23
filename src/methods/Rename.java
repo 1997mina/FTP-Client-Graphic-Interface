@@ -1,13 +1,11 @@
 package methods;
 
-import javax.swing.JOptionPane;
-
 import MainWindow.FileList;
-import MainWindow.filemanager.FTPFile;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import javax.swing.JOptionPane;
 
 public class Rename {
     /**
@@ -40,31 +38,16 @@ public class Rename {
     }
 
     /**
-     * Xử lý toàn bộ quy trình đổi tên, bao gồm cả tương tác với người dùng.
-     * @param fileList Tham chiếu đến giao diện FileList để truy cập các thành phần UI và trạng thái.
+     * Thực hiện hành động đổi tên và xử lý kết quả.
+     * @param fileList Tham chiếu đến FileList để truy cập các thành phần và làm mới.
+     * @param oldName Tên tệp cũ.
+     * @param newName Tên tệp mới.
      */
-    public static void handleRenameAction(FileList fileList) {
-        int selectedRow = fileList.getFileTable().getSelectedRow();
-        if (selectedRow == -1) {
-            // Điều này không nên xảy ra vì nút đã bị vô hiệu hóa, nhưng để an toàn
-            return;
-        }
-
-        FTPFile fileToRename = fileList.getCurrentFiles().get(selectedRow);
-        String oldName = fileToRename.getName();
-
-        // Hiển thị hộp thoại nhập liệu với tên cũ làm giá trị mặc định
-        String newName = JOptionPane.showInputDialog(fileList, "Nhập tên mới:", oldName);
-
-        // Kiểm tra nếu người dùng hủy, không nhập gì, hoặc không thay đổi tên
-        if (newName == null || newName.trim().isEmpty() || newName.trim().equals(oldName)) {
-            return;
-        }
-
+    public static void performRename(FileList fileList, String oldName, String newName) {
         try {
-            if (renameFile(fileList.getControlWriter(), fileList.getControlReader(), oldName, newName.trim())) {
-                JOptionPane.showMessageDialog(fileList, "Đã đổi tên thành công.", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-                fileList.refreshFileList(); // Tải lại danh sách
+            if (renameFile(fileList.getControlWriter(), fileList.getControlReader(), oldName, newName)) {
+                // Không cần thông báo thành công, việc làm mới danh sách đã là minh chứng
+                fileList.refreshFileList();
             } else {
                 JOptionPane.showMessageDialog(fileList, "Không thể đổi tên. Vui lòng kiểm tra lại tên hoặc quyền hạn.", "Lỗi Đổi tên", JOptionPane.ERROR_MESSAGE);
             }
@@ -72,5 +55,44 @@ public class Rename {
             JOptionPane.showMessageDialog(fileList, "Lỗi mạng khi đang đổi tên: " + ex.getMessage(), "Lỗi Mạng", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
         }
+    }
+
+    /**
+     * Bắt đầu quá trình đổi tên cho một hàng cụ thể trong bảng.
+     * Phương thức này đặt một cờ để cho phép chỉnh sửa ô, sau đó
+     * kích hoạt chế độ chỉnh sửa của JTable.
+     * @param fileList Tham chiếu đến FileList để truy cập các thành phần UI.
+     */
+    public static void initiateRename(FileList fileList) {
+        int selectedRow = fileList.getFileTable().getSelectedRow();
+        if (selectedRow != -1) {
+            fileList.isRenaming = true;
+            fileList.renamingRow = selectedRow;
+
+            // Kích hoạt chế độ chỉnh sửa cho ô ở hàng đã chọn và cột "Tên" (index 1)
+            fileList.getFileTable().editCellAt(selectedRow, 1);
+
+            // Yêu cầu focus vào trình chỉnh sửa để người dùng có thể nhập ngay lập tức
+            java.awt.Component editor = fileList.getFileTable().getEditorComponent();
+            if (editor != null) {
+                // Đặt con trỏ vào trình chỉnh sửa và chọn tất cả văn bản
+                editor.requestFocusInWindow();
+                if (editor instanceof javax.swing.JTextField) {
+                    ((javax.swing.JTextField) editor).selectAll();
+                }
+            }
+            
+            // Cập nhật trạng thái của toolbar để vô hiệu hóa các nút khác
+            fileList.getToolbar().updateButtonStates();
+        }
+    }
+
+    /**
+     * Xử lý toàn bộ quy trình đổi tên, bao gồm cả tương tác với người dùng.
+     * @param fileList Tham chiếu đến giao diện FileList để truy cập các thành phần UI và trạng thái.
+     */
+    public static void handleRenameAction(FileList fileList) {
+        // Gọi phương thức chuyên dụng trong FileList để bắt đầu quá trình đổi tên
+        initiateRename(fileList);
     }
 }

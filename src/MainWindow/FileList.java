@@ -32,9 +32,11 @@ public class FileList extends JFrame {
     private JTable fileTable;
     private DefaultTableModel tableModel;
     private Toolbar toolbar; // Thêm một tham chiếu đến toolbar
+    private JPanel centerPanel; // Panel chứa bảng và thanh tìm kiếm
     private PathPanel pathPanel; // Sử dụng lớp PathPanel chuyên dụng
     private java.util.List<FTPFile> currentFiles;
     private String currentPath;
+    private SearchBar searchBar;
     // Biến trạng thái để kiểm soát việc đổi tên trực tiếp
     public enum EditMode {
         NONE, RENAME, CREATE
@@ -69,8 +71,8 @@ public class FileList extends JFrame {
         // Gán một thực thể của lớp Quit làm trình xử lý sự kiện đóng cửa sổ
         addWindowListener(new Quit(controlWriter, controlReader, controlSocket));
 
-        // Khởi tạo bảng trước để nó có thể được tham chiếu bởi các thành phần khác như Toolbar
-        initializeTable();
+        // Khởi tạo bảng và lấy JScrollPane chứa nó
+        JScrollPane scrollPane = initializeTable();
 
         // Khởi tạo panel đường dẫn chuyên dụng
         pathPanel = new PathPanel(this);
@@ -85,10 +87,39 @@ public class FileList extends JFrame {
         topPanel.add(this.toolbar, BorderLayout.NORTH);
         topPanel.add(pathPanel, BorderLayout.SOUTH);
 
+        // Khởi tạo thanh tìm kiếm chuyên dụng
+        this.searchBar = new SearchBar(this);
+
+        // --- Sắp xếp các panel chính ---
+        centerPanel = new JPanel(new BorderLayout());
+        centerPanel.add(scrollPane, BorderLayout.CENTER);
+
         add(topPanel, BorderLayout.NORTH);
+        add(centerPanel, BorderLayout.CENTER);
+
         refreshFileList();
 
         setVisible(true);
+    }
+
+    /**
+     * Hiển thị hoặc ẩn thanh tìm kiếm.
+     * Được gọi bởi nút tìm kiếm trên thanh công cụ.
+     */
+    public void toggleSearchBar() {
+        if (searchBar.isShowing()) {
+            // Nếu đang hiển thị, hãy ẩn nó đi
+            centerPanel.remove(searchBar);
+            searchBar.clearSearchText();
+            // Khi logic tìm kiếm được triển khai, hãy gọi hàm reset tại đây
+            // searchFiles("");
+        } else {
+            // Nếu đang ẩn, hãy hiển thị nó ở trên cùng
+            centerPanel.add(searchBar, BorderLayout.NORTH);
+            searchBar.requestFocusInSearchField();
+        }
+        centerPanel.revalidate();
+        centerPanel.repaint();
     }
 
     /**
@@ -102,7 +133,7 @@ public class FileList extends JFrame {
     public Toolbar getToolbar() { return toolbar; }
 	public DefaultTableModel getTableModel() { return tableModel; }
 
-    private void initializeTable() {
+    private JScrollPane initializeTable() {
         // Định nghĩa các cột cho bảng
         String[] columnNames = {"", "Tên", "Kích thước", "Ngày sửa đổi"};
 
@@ -150,7 +181,7 @@ public class FileList extends JFrame {
                 return super.getColumnClass(columnIndex);
             }
         };
-
+        
         fileTable = new JTable(tableModel);
         fileTable.setFont(new Font("Segoe UI", Font.PLAIN, 14)); // Tăng cỡ chữ
         fileTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION); // Cho phép chọn nhiều hàng
@@ -246,13 +277,14 @@ public class FileList extends JFrame {
         fileTable.getColumnModel().getColumn(2).setPreferredWidth(50); // Kích thước
         fileTable.getColumnModel().getColumn(3).setPreferredWidth(250); // Ngày
 
-        JScrollPane scrollPane = new JScrollPane(fileTable);
         // Thêm trình nghe vào viewport của JScrollPane để bắt các cú nhấp chuột vào vùng trống.
+        JScrollPane scrollPane = new JScrollPane(fileTable);
         scrollPane.getViewport().addMouseListener(mouseListener);
-        add(scrollPane, BorderLayout.CENTER);
+        return scrollPane;
     }
 
     /**
+
      * Xử lý sự kiện nhấp đúp chuột vào một mục trong bảng.
      * Nếu mục là một thư mục, nó sẽ cố gắng thay đổi thư mục làm việc hiện tại trên server.
      */
@@ -367,6 +399,12 @@ public class FileList extends JFrame {
         // Đặt lại bất kỳ trạng thái chỉnh sửa nào trước khi làm mới
         this.editMode = EditMode.NONE;
         this.editingRow = -1;
+
+        // Nếu thanh tìm kiếm đang hiển thị, hãy ẩn nó đi và xóa văn bản
+        if (this.searchBar != null && this.searchBar.isShowing()) {
+            centerPanel.remove(this.searchBar);
+            this.searchBar.clearSearchText(); // Xóa văn bản để đảm bảo giao diện nhất quán
+        }
 
         try {
             // Lấy đường dẫn hiện tại trước khi làm mới danh sách

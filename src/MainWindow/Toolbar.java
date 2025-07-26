@@ -8,6 +8,7 @@ import javax.swing.JToolBar;
 
 import MainWindow.filemanager.FTPFile;
 
+import java.awt.Cursor;
 import java.awt.Image;
 import java.io.File;
 
@@ -26,6 +27,7 @@ public class Toolbar extends JToolBar {
     public final JButton uploadButton;
     public final JButton deleteButton;
     public final JButton renameButton;
+    public final JButton searchButton;
     public final JButton createDirButton;
 
     @SuppressWarnings("unused")
@@ -41,11 +43,13 @@ public class Toolbar extends JToolBar {
         downloadButton = createToolbarButton("download.png", "Tải xuống");
         uploadButton = createToolbarButton("upload.png", "Tải lên");
         deleteButton = createToolbarButton("delete.png", "Xóa");
+        searchButton = createToolbarButton("search01.png", "Tìm kiếm");
         createDirButton = createToolbarButton("newfolder.png", "Thư mục mới");
 
         // Thêm các nút vào thanh công cụ
         add(backButton);
         add(refreshButton);
+        add(searchButton);
         addSeparator();
         add(createDirButton);
         add(renameButton);
@@ -62,6 +66,7 @@ public class Toolbar extends JToolBar {
         uploadButton.addActionListener(e -> Store.handleUploadAction(fileList));
         createDirButton.addActionListener(e -> Mkdir.initiateCreateDirectory(fileList));
         downloadButton.addActionListener(e -> Retrieve.handleDownloadAction(fileList));
+        searchButton.addActionListener(e -> fileList.toggleSearchBar());
     }
 
     /**
@@ -126,6 +131,7 @@ public class Toolbar extends JToolBar {
      * @param toolTipText  Văn bản chú thích khi di chuột qua.
      * @return một đối tượng JButton.
      */
+    @SuppressWarnings("unused")
     private JButton createToolbarButton(String iconFileName, String buttonText) {
         String iconPath = "img/" + iconFileName;
         File iconFile = new File(iconPath);
@@ -142,6 +148,14 @@ public class Toolbar extends JToolBar {
 
         button.setToolTipText(buttonText);
         button.setFocusable(false);
+        // Đặt con trỏ thành hình bàn tay chỉ khi nút đó không bị vô hiệu hóa
+        button.addChangeListener(e -> {
+            if (button.isEnabled()) {
+                button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            } else {
+                button.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            }
+        });
         return button;
     }
 }

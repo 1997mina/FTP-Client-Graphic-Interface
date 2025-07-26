@@ -20,7 +20,7 @@ public class Properties extends JDialog {
      */
     @SuppressWarnings("unused")
     public Properties(Frame owner, FTPFile file, String path) {
-        super(owner, "Thuộc tính: " + file.getName(), true); // true để làm cho dialog modal
+        super(owner, "Chi tiết: " + file.getName(), true); // true để làm cho dialog modal
         setSize(450, 280);
         setResizable(false);
         setLocationRelativeTo(owner);

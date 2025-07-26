@@ -14,7 +14,10 @@ import javax.swing.event.CellEditorListener;
 
 import java.awt.*;
 import java.awt.event.MouseAdapter;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.InputEvent;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -35,6 +38,7 @@ public class FileList extends JFrame {
     private JPanel centerPanel; // Panel chứa bảng và thanh tìm kiếm
     private PathPanel pathPanel; // Sử dụng lớp PathPanel chuyên dụng
     private java.util.List<FTPFile> currentFiles;
+    private java.util.List<FTPFile> displayedFiles; // Files currently shown in the table
     private String currentPath;
     private SearchBar searchBar;
     // Biến trạng thái để kiểm soát việc đổi tên trực tiếp
@@ -58,6 +62,7 @@ public class FileList extends JFrame {
     public FileList(Socket controlSocket, BufferedReader controlReader, PrintWriter controlWriter) {
         this.controlReader = controlReader;
         this.controlWriter = controlWriter;
+        this.displayedFiles = new java.util.ArrayList<>();
 
         // Thiết lập layout chính cho JFrame để có thể đặt toolbar ở trên
         setLayout(new BorderLayout());
@@ -97,6 +102,19 @@ public class FileList extends JFrame {
         add(topPanel, BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);
 
+        // --- Thiết lập phím tắt (Ctrl+F) ---
+        JRootPane rootPane = this.getRootPane();
+        KeyStroke ctrlF = KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_DOWN_MASK);
+
+        // Gán phím tắt với hành động
+        rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(ctrlF, "TOGGLE_SEARCH_BAR");
+        rootPane.getActionMap().put("TOGGLE_SEARCH_BAR", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                toggleSearchBar();
+            }
+        });
+
         refreshFileList();
 
         setVisible(true);
@@ -110,9 +128,8 @@ public class FileList extends JFrame {
         if (searchBar.isShowing()) {
             // Nếu đang hiển thị, hãy ẩn nó đi
             centerPanel.remove(searchBar);
-            searchBar.clearSearchText();
-            // Khi logic tìm kiếm được triển khai, hãy gọi hàm reset tại đây
-            // searchFiles("");
+            // Đặt lại tìm kiếm để hiển thị tất cả các tệp khi thanh tìm kiếm bị ẩn.
+            searchFiles("");
         } else {
             // Nếu đang ẩn, hãy hiển thị nó ở trên cùng
             centerPanel.add(searchBar, BorderLayout.NORTH);
@@ -123,10 +140,32 @@ public class FileList extends JFrame {
     }
 
     /**
+     * Lọc danh sách tệp dựa trên một truy vấn tìm kiếm và cập nhật bảng.
+     * @param query Từ khóa tìm kiếm. Nếu rỗng, tất cả các tệp sẽ được hiển thị.
+     */
+    public void searchFiles(String query) {
+        // Nếu không có tệp gốc, không làm gì cả
+        if (currentFiles == null) return;
+
+        String lowerCaseQuery = query.toLowerCase().trim();
+
+        if (lowerCaseQuery.isEmpty()) {
+            // Nếu truy vấn rỗng, hiển thị tất cả các tệp
+            displayedFiles = new java.util.ArrayList<>(currentFiles);
+        } else {
+            // Lọc danh sách tệp
+            displayedFiles = currentFiles.stream()
+                    .filter(file -> file.getName().toLowerCase().contains(lowerCaseQuery))
+                    .collect(java.util.stream.Collectors.toList());
+        }
+        updateTableDisplay();
+    }
+
+    /**
      * Các phương thức getter để cho phép Toolbar truy cập các thành phần của FileList.
      */
     public JTable getFileTable() { return fileTable; }
-    public java.util.List<FTPFile> getCurrentFiles() { return currentFiles; }
+    public java.util.List<FTPFile> getCurrentFiles() { return displayedFiles; } // Trả về danh sách đã lọc
     public PrintWriter getControlWriter() { return controlWriter; }
     public BufferedReader getControlReader() { return controlReader; }
     public String getCurrentPath() { return currentPath; }
@@ -152,7 +191,7 @@ public class FileList extends JFrame {
                     String newName = ((String) aValue).trim();
 
                     if (editMode == EditMode.RENAME) {
-                        FTPFile fileToRename = currentFiles.get(row);
+                        FTPFile fileToRename = displayedFiles.get(row);
                         String oldName = fileToRename.getName();
 
                         if (!newName.isEmpty() && !newName.equals(oldName)) {
@@ -294,7 +333,7 @@ public class FileList extends JFrame {
             return; // Không có hàng nào được chọn
         }
 
-        FTPFile selectedFile = currentFiles.get(selectedRow);
+        FTPFile selectedFile = displayedFiles.get(selectedRow);
 
         if (selectedFile.isDirectory()) {
             try {
@@ -370,7 +409,7 @@ public class FileList extends JFrame {
      * @param criteria Tiêu chí để sắp xếp (Tên, Kích thước, Ngày).
      */
     public void sortFileList(SortCriteria criteria) {
-        if (currentFiles == null || currentFiles.isEmpty()) {
+        if (displayedFiles == null || displayedFiles.isEmpty()) {
             return;
         }
 
@@ -389,7 +428,7 @@ public class FileList extends JFrame {
                 break;
         }
 
-        currentFiles.sort(comparator);
+        displayedFiles.sort(comparator);
         updateTableDisplay();
     }
     /**
@@ -404,6 +443,7 @@ public class FileList extends JFrame {
         if (this.searchBar != null && this.searchBar.isShowing()) {
             centerPanel.remove(this.searchBar);
             this.searchBar.clearSearchText(); // Xóa văn bản để đảm bảo giao diện nhất quán
+            searchFiles(""); // Reset the search
         }
 
         try {
@@ -415,7 +455,8 @@ public class FileList extends JFrame {
             String fileListString = methods.List.getFileList(controlReader, controlWriter);
             this.currentFiles = FTPFileParser.parse(fileListString);
 
-            updateTableDisplay();
+            // Sau khi làm mới, hiển thị tất cả các tệp
+            searchFiles("");
 
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách tệp: " + e.getMessage(), "Lỗi FTP", JOptionPane.ERROR_MESSAGE);
@@ -430,15 +471,15 @@ public class FileList extends JFrame {
         // Xóa dữ liệu cũ trong bảng
         tableModel.setRowCount(0);
 
-        if (currentFiles == null) return;
+        if (displayedFiles == null) return;
 
         // Lấy icon hệ thống cho thư mục và file
         Icon folderIcon = getSystemIcon(true);
         Icon fileIcon = getSystemIcon(false);
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
 
-        // Thêm từng file/thư mục vào bảng
-        for (FTPFile ftpFile : this.currentFiles) {
+        // Thêm từng file/thư mục từ danh sách đã lọc vào bảng
+        for (FTPFile ftpFile : this.displayedFiles) {
             Object[] rowData = {
                     ftpFile.isDirectory() ? folderIcon : fileIcon,
                     ftpFile.getName(),

@@ -7,8 +7,10 @@ import java.awt.Insets;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.ConnectException;
+
 import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.net.ConnectException;
 
 import javax.swing.JCheckBox;
 import javax.swing.JButton;
@@ -138,7 +140,7 @@ public class LoginViewer extends JFrame {
         } catch (ConnectException e) {
             JOptionPane.showMessageDialog(null, "Không thể kết nối đến FTP server. Vui lòng đảm bảo server đang chạy trước khi khởi động ứng dụng.", "Lỗi Kết Nối Server", JOptionPane.ERROR_MESSAGE);
             System.exit(0);
-        } catch (java.net.SocketTimeoutException e) {
+        } catch (SocketTimeoutException e) {
             JOptionPane.showMessageDialog(null, "Kết nối đến server bị timeout. Server có thể đang bị treo hoặc mạng chậm.", "Lỗi Kết Nối Server", JOptionPane.ERROR_MESSAGE);
             System.exit(0);
         } catch (IOException e) {

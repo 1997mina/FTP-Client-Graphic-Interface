@@ -49,10 +49,10 @@ public class Toolbar extends JToolBar {
         addSeparator();
         add(createDirButton);
         add(renameButton);
+        add(deleteButton);
+        addSeparator();
         add(downloadButton);
         add(uploadButton);
-        addSeparator();
-        add(deleteButton);
 
         // Gán các trình xử lý sự kiện cho các thành phần UI, chẳng hạn như các nút trên thanh công cụ.
         backButton.addActionListener(e -> Cdup.handleBackAction(fileList));
@@ -126,18 +126,11 @@ public class Toolbar extends JToolBar {
      * @param toolTipText  Văn bản chú thích khi di chuột qua.
      * @return một đối tượng JButton.
      */
-    private JButton createToolbarButton(String iconFileName, String toolTipText) {
+    private JButton createToolbarButton(String iconFileName, String buttonText) {
         String iconPath = "img/" + iconFileName;
         File iconFile = new File(iconPath);
 
-        // Lấy phần văn bản chính cho nút từ tooltip một cách an toàn
-        String buttonText = toolTipText;
-        int parenthesisIndex = toolTipText.indexOf('(');
-        if (parenthesisIndex != -1) {
-            // Nếu có dấu ngoặc đơn, chỉ lấy phần văn bản phía trước
-            buttonText = toolTipText.substring(0, parenthesisIndex).trim();
-        }
-        JButton button = new JButton(buttonText);
+        JButton button = new JButton();
 
         if (iconFile.exists()) {
             ImageIcon originalIcon = new ImageIcon(iconPath);
@@ -147,7 +140,7 @@ public class Toolbar extends JToolBar {
             System.err.println("Không tìm thấy icon tại đường dẫn: " + iconFile.getAbsolutePath());
         }
 
-        button.setToolTipText(toolTipText);
+        button.setToolTipText(buttonText);
         button.setFocusable(false);
         return button;
     }

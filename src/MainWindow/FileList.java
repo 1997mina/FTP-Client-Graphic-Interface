@@ -16,7 +16,6 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-import methods.Rename;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -186,41 +185,53 @@ public class FileList extends JFrame {
             }
         });
 
-        // Thêm trình nghe sự kiện chuột để xử lý nhấp đúp và nhấp chuột phải
-        fileTable.addMouseListener(new MouseAdapter() {
+        // Tạo một MouseAdapter duy nhất để xử lý các sự kiện chuột trên cả JTable và vùng trống.
+        MouseAdapter mouseListener = new MouseAdapter() {
             private void showPopupMenu(MouseEvent e) {
-                int row = fileTable.rowAtPoint(e.getPoint());
-                // Nếu nhấp chuột phải vào một hàng, hãy chọn nó.
-                if (row >= 0 && row < fileTable.getRowCount()) {
+                // Chuyển đổi điểm nhấp chuột sang hệ tọa độ của JTable để xác định hàng.
+                // Điều này đảm bảo nó hoạt động chính xác ngay cả khi sự kiện đến từ JScrollPane.
+                Point point = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), fileTable);
+                int row = fileTable.rowAtPoint(point);
+
+                // Nếu nhấp vào một hàng hợp lệ và hàng đó chưa được chọn,
+                // hãy xóa lựa chọn trước đó và chỉ chọn hàng được nhấp.
+                // Điều này giữ nguyên lựa chọn nhiều mục nếu người dùng nhấp chuột phải vào một mục đã được chọn.
+                if (row != -1) {
                     if (!fileTable.isRowSelected(row)) {
                         fileTable.setRowSelectionInterval(row, row);
                     }
                 } else {
-                    // Nếu nhấp vào vùng trống, hãy xóa lựa chọn
+                    // Nếu nhấp vào vùng trống (không phải trên hàng nào), hãy xóa lựa chọn.
                     fileTable.clearSelection();
                 }
-                // Luôn hiển thị menu
+
+                // Luôn hiển thị menu bật lên. Các mục của nó sẽ được bật/tắt dựa trên lựa chọn hiện tại.
                 PopUpMenu menu = new PopUpMenu(FileList.this);
                 menu.show(e.getComponent(), e.getX(), e.getY());
             }
 
             @Override
             public void mousePressed(MouseEvent e) {
-                // Xử lý nhấp đúp để mở tệp/thư mục
+                // Xử lý nhấp đúp để mở tệp/thư mục.
                 if (e.getClickCount() == 2 && fileTable.getSelectedRow() != -1) {
                     handleDoubleClick();
-                } else if (e.isPopupTrigger()) { // Dành cho Mac/Linux
+                }
+                // Hiển thị menu bật lên khi có trình kích hoạt (dành cho Mac/Linux).
+                if (e.isPopupTrigger()) {
                     showPopupMenu(e);
                 }
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                if (e.isPopupTrigger()) { // Dành cho Windows
+                // Hiển thị menu bật lên khi có trình kích hoạt (dành cho Windows).
+                if (e.isPopupTrigger()) {
                     showPopupMenu(e);
                 }
             }
-        });
+        };
+        // Thêm trình nghe sự kiện chuột vào bảng
+        fileTable.addMouseListener(mouseListener);
         // Xử lý header cho danh sách file
         JTableHeader header = fileTable.getTableHeader();
         header.setFont(header.getFont().deriveFont(Font.BOLD, 16)); // Tăng cỡ chữ header
@@ -235,7 +246,10 @@ public class FileList extends JFrame {
         fileTable.getColumnModel().getColumn(2).setPreferredWidth(50); // Kích thước
         fileTable.getColumnModel().getColumn(3).setPreferredWidth(250); // Ngày
 
-        add(new JScrollPane(fileTable), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(fileTable);
+        // Thêm trình nghe vào viewport của JScrollPane để bắt các cú nhấp chuột vào vùng trống.
+        scrollPane.getViewport().addMouseListener(mouseListener);
+        add(scrollPane, BorderLayout.CENTER);
     }
 
     /**

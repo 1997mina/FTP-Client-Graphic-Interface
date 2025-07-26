@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.Socket;
 
+import javax.swing.JCheckBox;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -24,13 +25,15 @@ public class LoginViewer extends JFrame {
     private JPasswordField passwordField;
     private JButton loginButton;
     private JLabel errorLabel;
+    private JCheckBox showPasswordCheckBox;
 
+    @SuppressWarnings("unused")
     public LoginViewer() {
         // Kiểm tra trạng thái server ngay khi khởi động
         checkServerStatus();
 
         setTitle("Đăng nhập");
-        setSize(300, 200); // Đặt kích thước cửa sổ
+        setSize(300, 250); // Đặt kích thước cửa sổ
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null); // Center the window
 
@@ -40,6 +43,8 @@ public class LoginViewer extends JFrame {
 
         JLabel passwordLabel = new JLabel("Mật khẩu:");
         passwordField = new JPasswordField(15);
+
+        showPasswordCheckBox = new JCheckBox("Hiện mật khẩu");
 
         loginButton = new JButton("Đăng nhập");
         loginButton.setBackground(Color.BLUE); // Đặt màu nền xanh cho nút
@@ -74,22 +79,37 @@ public class LoginViewer extends JFrame {
         gbc.anchor = GridBagConstraints.WEST; // Căn lề trái
         panel.add(passwordField, gbc);
 
+        // Add show password checkbox
+        gbc.gridx = 1;
+        gbc.gridy = 2;
+        gbc.anchor = GridBagConstraints.WEST;
+        panel.add(showPasswordCheckBox, gbc);
+
         // Add login button
         gbc.gridx = 0;
-        gbc.gridy = 2;
+        gbc.gridy = 3;
         gbc.gridwidth = 2; // Nút chiếm 2 cột
         gbc.anchor = GridBagConstraints.CENTER; // Căn giữa
         panel.add(loginButton, gbc);
 
         // Thêm nhãn báo lỗi
         gbc.gridx = 0;
-        gbc.gridy = 3;
+        gbc.gridy = 4;
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
         panel.add(errorLabel, gbc);
 
         // Add action listener to the login button
         loginButton.addActionListener(new CheckLoginInfo(usernameField, passwordField, this, errorLabel)); // Thêm trình nghe sự kiện cho nút đăng nhập
+
+        // Thêm trình nghe sự kiện cho checkbox hiện mật khẩu
+        showPasswordCheckBox.addActionListener(e -> {
+            if (showPasswordCheckBox.isSelected()) {
+                passwordField.setEchoChar((char) 0); // Hiện mật khẩu
+            } else {
+                passwordField.setEchoChar('•'); // Ẩn mật khẩu
+            }
+        });
 
         // Add the panel to the frame and make it visible
         add(panel);

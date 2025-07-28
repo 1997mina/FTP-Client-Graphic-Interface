@@ -29,6 +29,9 @@ public class Toolbar extends JToolBar {
     public final JButton renameButton;
     public final JButton searchButton;
     public final JButton createDirButton;
+    public final JButton copyButton;
+    public final JButton pasteButton;
+    public final JButton cutButton;
 
     @SuppressWarnings("unused")
     public Toolbar(FileList fileList) {
@@ -45,11 +48,18 @@ public class Toolbar extends JToolBar {
         deleteButton = createToolbarButton("delete.png", "Xóa");
         searchButton = createToolbarButton("search01.png", "Tìm kiếm");
         createDirButton = createToolbarButton("newfolder.png", "Thư mục mới");
+        copyButton = createToolbarButton("copy.png", "Sao chép");
+        pasteButton = createToolbarButton("paste.png", "Dán");
+        cutButton = createToolbarButton("cut.png", "Cắt");
 
         // Thêm các nút vào thanh công cụ
         add(backButton);
         add(refreshButton);
         add(searchButton);
+        addSeparator();
+        add(copyButton);
+        add(pasteButton);
+        add(cutButton);
         addSeparator();
         add(createDirButton);
         add(renameButton);

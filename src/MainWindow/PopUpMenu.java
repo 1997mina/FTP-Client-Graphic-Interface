@@ -46,13 +46,13 @@ public class PopUpMenu extends JPopupMenu {
         // Thêm dải phân cách và menu sắp xếp
         addSeparator();
 
-        JMenu newMenu = new JMenu("Tạo mới");
-        JMenuItem newFolderItem = new JMenuItem("Thư mục mới");
+        JMenuItem copyItem = new JMenuItem("Sao chép");
+        JMenuItem pasteItem = new JMenuItem("Dán");
+        JMenuItem cutItem = new JMenuItem("Cắt");
 
-        newFolderItem.addActionListener(e -> Mkdir.initiateCreateDirectory(fileList));
-
-        newMenu.add(newFolderItem);
-        add(newMenu);
+        add(cutItem);
+        add(copyItem);
+        add(pasteItem);
 
         addSeparator();
 
@@ -78,6 +78,16 @@ public class PopUpMenu extends JPopupMenu {
         add(downloadItem);
         add(deleteItem);
         add(renameItem);
+
+        addSeparator();
+
+        JMenu newMenu = new JMenu("Tạo mới");
+        JMenuItem newFolderItem = new JMenuItem("Thư mục mới");
+
+        newFolderItem.addActionListener(e -> Mkdir.initiateCreateDirectory(fileList));
+
+        newMenu.add(newFolderItem);
+        add(newMenu);
 
         addSeparator();
 

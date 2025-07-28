@@ -102,7 +102,7 @@ public class LoginViewer extends JFrame {
         panel.add(errorLabel, gbc);
 
         // Add action listener to the login button
-        loginButton.addActionListener(new CheckLoginInfo(usernameField, passwordField, this, errorLabel)); // Thêm trình nghe sự kiện cho nút đăng nhập
+        loginButton.addActionListener(new CheckLoginInfo(usernameField, passwordField, this, errorLabel, loginButton)); // Thêm trình nghe sự kiện cho nút đăng nhập
 
         // Thêm trình nghe sự kiện cho checkbox hiện mật khẩu
         showPasswordCheckBox.addActionListener(e -> {

@@ -1,9 +1,7 @@
 package MainWindow;
 
-import methods.Delete;
-import methods.Mkdir;
-import methods.Rename;
-import methods.Retrieve;
+import methods.*;
+import MainWindow.filemanager.ClipboardManager;
 
 import MainWindow.filemanager.FTPFile;
 
@@ -50,26 +48,32 @@ public class PopUpMenu extends JPopupMenu {
         JMenuItem pasteItem = new JMenuItem("Dán");
         JMenuItem cutItem = new JMenuItem("Cắt");
 
+        // Lấy số lượng hàng đang được chọn để quyết định trạng thái của các mục menu
+        int[] selectedRows = fileList.getFileTable().getSelectedRows();
+        int selectionCount = selectedRows.length;
+
         add(cutItem);
         add(copyItem);
         add(pasteItem);
-
+        
         addSeparator();
 
         JMenuItem downloadItem = new JMenuItem("Tải xuống");
         JMenuItem deleteItem = new JMenuItem("Xóa");
         JMenuItem renameItem = new JMenuItem("Đổi tên");
 
-        // Lấy số lượng hàng đang được chọn để quyết định trạng thái của các mục menu
-        int[] selectedRows = fileList.getFileTable().getSelectedRows();
-        int selectionCount = selectedRows.length;
-
         // Gán hành động cho từng mục menu, gọi đến các phương thức xử lý tương ứng
         downloadItem.addActionListener(e -> Retrieve.handleDownloadAction(fileList));
         deleteItem.addActionListener(e -> Delete.handleDeleteAction(fileList));
         renameItem.addActionListener(e -> Rename.handleRenameAction(fileList));
+        copyItem.addActionListener(e -> Copy.handleCopyAction(fileList));
+        cutItem.addActionListener(e -> Cut.handleCutAction(fileList));
+        pasteItem.addActionListener(e -> Paste.handlePasteAction(fileList));
 
         // Bật/tắt các mục menu dựa trên lựa chọn
+        copyItem.setEnabled(selectionCount > 0);
+        cutItem.setEnabled(selectionCount > 0);
+        pasteItem.setEnabled(!ClipboardManager.getInstance().isEmpty());
         downloadItem.setEnabled(selectionCount > 0);
         deleteItem.setEnabled(selectionCount > 0);
         renameItem.setEnabled(selectionCount == 1);

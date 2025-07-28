@@ -7,10 +7,12 @@ import javax.swing.SwingWorker;
 import MainWindow.FileList;
 import MainWindow.ProgressDialog;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.List;
 
@@ -106,5 +108,27 @@ public class Store {
             worker.execute();
             progressDialog.setVisible(true);
         }
+    }
+
+    public static void uploadFileFromBytes(BufferedReader controlReader, PrintWriter controlWriter, byte[] fileData, String remoteFileName) throws IOException {
+        // 1. Mở kết nối dữ liệu bằng chế độ passive.
+        try (Socket dataSocket = Passive.openDataConnection(controlReader, controlWriter);
+             OutputStream dataOut = dataSocket.getOutputStream()) {
+
+            // 2. Gửi lệnh STOR (Store) qua kết nối điều khiển.
+            controlWriter.println("STOR " + remoteFileName);
+
+            // 3. Đọc phản hồi ban đầu (ví dụ: 150).
+            String storResponse = controlReader.readLine();
+            if (storResponse == null || !storResponse.startsWith("150")) {
+                throw new IOException("Không thể tải lên tệp: " + storResponse);
+            }
+
+            // 4. Ghi dữ liệu từ mảng byte vào kết nối dữ liệu.
+            dataOut.write(fileData);
+            dataOut.flush();
+        } // Socket và stream sẽ tự đóng ở đây.
+        // 5. Đọc phản hồi cuối cùng trên kết nối điều khiển (ví dụ: 226 Transfer complete).
+        controlReader.readLine(); // Đọc và bỏ qua phản hồi 226
     }
 }

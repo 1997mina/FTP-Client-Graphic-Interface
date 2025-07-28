@@ -6,7 +6,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JToolBar;
 
-import MainWindow.filemanager.FTPFile;
+import MainWindow.filemanager.ClipboardManager;
 
 import java.awt.Cursor;
 import java.awt.Image;
@@ -81,6 +81,9 @@ public class Toolbar extends JToolBar {
         createDirButton.addActionListener(e -> Mkdir.initiateCreateDirectory(fileList));
         downloadButton.addActionListener(e -> Retrieve.handleDownloadAction(fileList));
         searchButton.addActionListener(e -> fileList.toggleSearchBar());
+        copyButton.addActionListener(e -> Copy.handleCopyAction(fileList));
+        cutButton.addActionListener(e -> Cut.handleCutAction(fileList));
+        pasteButton.addActionListener(e -> Paste.handlePasteAction(fileList));
         quitButton.addActionListener(e -> fileList.getQuitHandler().doQuit());
     }
 
@@ -89,7 +92,7 @@ public class Toolbar extends JToolBar {
      * dựa trên mục đang được chọn trong bảng.
      */
     public void updateButtonStates() {
-        // Nếu đang trong quá trình chỉnh sửa (đổi tên hoặc tạo mới), vô hiệu hóa tất cả các nút
+        // Nếu đang trong quá trình chỉnh sửa (đổi tên hoặc tạo mới), vô hiệu hóa hầu hết các nút
         if (fileList.editMode != FileList.EditMode.NONE) {
             backButton.setEnabled(false);
             refreshButton.setEnabled(false);
@@ -98,34 +101,35 @@ public class Toolbar extends JToolBar {
             deleteButton.setEnabled(false);
             renameButton.setEnabled(false);
             createDirButton.setEnabled(false);
+            copyButton.setEnabled(false);
+            cutButton.setEnabled(false);
+            pasteButton.setEnabled(false);
+            searchButton.setEnabled(false);
             return;
         }
 
         int[] selectedRows = fileList.getFileTable().getSelectedRows();
         int selectionCount = selectedRows.length;
 
-        // Vô hiệu hóa nút "Quay lại" nếu đang ở thư mục gốc
+        // Các nút có mục đích chung
         String currentPath = fileList.getCurrentPath();
         backButton.setEnabled(currentPath != null && !currentPath.equals("/"));
-
         uploadButton.setEnabled(true);
-        backButton.setEnabled(true);
         refreshButton.setEnabled(true);
         createDirButton.setEnabled(true);
+        searchButton.setEnabled(true);
 
-        if (selectionCount == 0) { // Không có mục nào được chọn
-            downloadButton.setEnabled(false);
-            deleteButton.setEnabled(false);
-            renameButton.setEnabled(false);
-        } else if (selectionCount == 1) { // Có đúng một mục được chọn
-            FTPFile selectedFile = fileList.getCurrentFiles().get(selectedRows[0]);
-            boolean isFile = !selectedFile.isDirectory();
+        // Các nút liên quan đến clipboard
+        pasteButton.setEnabled(!ClipboardManager.getInstance().isEmpty());
+        copyButton.setEnabled(selectionCount > 0);
+        cutButton.setEnabled(selectionCount > 0);
 
-            downloadButton.setEnabled(isFile);
-            deleteButton.setEnabled(true);
-            renameButton.setEnabled(true);
-        } else { // Có nhiều mục được chọn
-            // Bật nút tải xuống nếu có ít nhất một tệp trong các mục đã chọn.
+        // Các nút phụ thuộc vào lựa chọn
+        deleteButton.setEnabled(selectionCount > 0);
+        renameButton.setEnabled(selectionCount == 1);
+
+        // Logic tải xuống
+        if (selectionCount > 0) {
             boolean hasFile = false;
             for (int row : selectedRows) {
                 if (!fileList.getCurrentFiles().get(row).isDirectory()) {
@@ -134,8 +138,8 @@ public class Toolbar extends JToolBar {
                 }
             }
             downloadButton.setEnabled(hasFile);
-            deleteButton.setEnabled(true);    // Cho phép xóa nhiều mục
-            renameButton.setEnabled(false);   // Không cho phép đổi tên nhiều mục
+        } else {
+            downloadButton.setEnabled(false);
         }
     }
 

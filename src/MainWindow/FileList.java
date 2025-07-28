@@ -42,6 +42,7 @@ public class FileList extends JFrame {
     private String currentPath;
     private SearchBar searchBar;
     // Biến trạng thái để kiểm soát việc đổi tên trực tiếp
+    private Quit quitHandler;
     public enum EditMode {
         NONE, RENAME, CREATE
     }
@@ -73,8 +74,9 @@ public class FileList extends JFrame {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Gán một thực thể của lớp Quit làm trình xử lý sự kiện đóng cửa sổ
-        addWindowListener(new Quit(controlWriter, controlReader, controlSocket));
+        // Khởi tạo và gán trình xử lý thoát
+        this.quitHandler = new Quit(controlWriter, controlReader, controlSocket);
+        addWindowListener(this.quitHandler);
 
         // Khởi tạo bảng và lấy JScrollPane chứa nó
         JScrollPane scrollPane = initializeTable();
@@ -170,6 +172,7 @@ public class FileList extends JFrame {
     public BufferedReader getControlReader() { return controlReader; }
     public String getCurrentPath() { return currentPath; }
     public Toolbar getToolbar() { return toolbar; }
+    public Quit getQuitHandler() { return quitHandler; }
 	public DefaultTableModel getTableModel() { return tableModel; }
 
     private JScrollPane initializeTable() {

@@ -26,6 +26,15 @@ public class Quit extends WindowAdapter {
 
     @Override
     public void windowClosing(WindowEvent e) {
+        doQuit();
+    }
+
+    /**
+     * Thực hiện hành động thoát: gửi lệnh QUIT đến server, đóng các tài nguyên
+     * và kết thúc ứng dụng.
+     * Phương thức này có thể được gọi từ nhiều nơi (nút thoát, menu, đóng cửa sổ).
+     */
+    public void doQuit() {
         try {
             if (controlWriter != null) {
                 controlWriter.println("QUIT"); // Gửi lệnh thoát một cách lịch sự

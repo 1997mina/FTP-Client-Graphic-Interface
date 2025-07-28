@@ -32,6 +32,7 @@ public class Toolbar extends JToolBar {
     public final JButton copyButton;
     public final JButton pasteButton;
     public final JButton cutButton;
+    public final JButton quitButton;
 
     @SuppressWarnings("unused")
     public Toolbar(FileList fileList) {
@@ -51,6 +52,7 @@ public class Toolbar extends JToolBar {
         copyButton = createToolbarButton("copy.png", "Sao chép");
         pasteButton = createToolbarButton("paste.png", "Dán");
         cutButton = createToolbarButton("cut.png", "Cắt");
+        quitButton = createToolbarButton("quit.png", "Thoát");
 
         // Thêm các nút vào thanh công cụ
         add(backButton);
@@ -67,6 +69,8 @@ public class Toolbar extends JToolBar {
         addSeparator();
         add(downloadButton);
         add(uploadButton);
+        addSeparator();
+        add(quitButton);
 
         // Gán các trình xử lý sự kiện cho các thành phần UI, chẳng hạn như các nút trên thanh công cụ.
         backButton.addActionListener(e -> Cdup.handleBackAction(fileList));
@@ -77,6 +81,7 @@ public class Toolbar extends JToolBar {
         createDirButton.addActionListener(e -> Mkdir.initiateCreateDirectory(fileList));
         downloadButton.addActionListener(e -> Retrieve.handleDownloadAction(fileList));
         searchButton.addActionListener(e -> fileList.toggleSearchBar());
+        quitButton.addActionListener(e -> fileList.getQuitHandler().doQuit());
     }
 
     /**
